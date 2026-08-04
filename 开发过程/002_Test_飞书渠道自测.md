@@ -93,6 +93,23 @@ final package remains 27 entries with content digest
 `6f0fcc4390e3c131169902a682f60ef935a06b26d46015cb5eb48556fc294444`.
 Its final unpacked size is 215,274 bytes.
 
+### Outer-wrapper hardening
+
+- Repository approved minimum: 22; final development run: 22/22.
+- Feishu approved minimum remains 29/29.
+- Test execution and count validation return an explicit confirmation that must
+  be consumed before audit or packaging steps.
+- A warning-only outer wrapper that swallows the test failure returns false and
+  cannot produce a successful verification result.
+- Static policy rejects removal of the final validator line, gate call, or
+  final result check.
+- Final npm run verify: PASS; audit 0 vulnerabilities; Feishu package remains
+  27 entries with content digest
+  6f0fcc4390e3c131169902a682f60ef935a06b26d46015cb5eb48556fc294444.
+
+These are development-side results and still require XiaoA's independent
+mutation run.
+
 ## Isolated Lifecycle Verification
 
 1. The real post-install hook ran in a temporary HOME with fake `yos` and

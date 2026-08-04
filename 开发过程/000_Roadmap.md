@@ -8,6 +8,7 @@
 | 3 | Package and isolated lifecycle verification | Complete |
 | 4 | XiaoA independent real Feishu acceptance | Pending |
 | 5 | Immutable artifact, component tag and Registry publication | Pending |
+| 6 | Repository test-gate final-result enforcement | Development complete; independent acceptance pending |
 
 The first formal component is `channels/001_feishu`. Other channels do not
 enter this repository until Feishu completes the full acceptance path.
