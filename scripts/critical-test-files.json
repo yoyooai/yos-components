@@ -7,11 +7,15 @@
     { "path": "test/repository-contract.test.mjs", "minimumTests": 1 },
     { "path": "test/runtime-permissions.test.mjs", "minimumTests": 1 },
     { "path": "test/feishu-package-policy.test.mjs", "minimumTests": 1 },
+    { "path": "test/weixin-repository-contract.test.mjs", "minimumTests": 1 },
+    { "path": "channels/002_weixin/test/protocol.test.ts", "minimumTests": 1 },
     { "path": "scripts/test-policy.mjs" },
     { "path": "scripts/test-baseline-policy.mjs" },
     { "path": "scripts/test-baselines.json" },
     { "path": "scripts/critical-test-files.json" },
     { "path": "scripts/verify.mjs" },
-    { "path": "scripts/verify-package.mjs" }
+    { "path": "scripts/verify-package.mjs" },
+    { "path": "scripts/verify-weixin-package.mjs" },
+    { "path": "channels/002_weixin/provenance/upstream.json" }
   ]
 }

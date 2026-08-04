@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/index.ts",
     "login": "node scripts/login.ts login",
-    "test": "node --test test/*.test.ts",
+    "test": "node --test --test-reporter=tap test/*.test.ts",
     "prepack": "node ../../scripts/verify-weixin-package.mjs"
   },
   "yos": {

@@ -37,7 +37,7 @@ test('channel policy finds disabled and focused test declarations', () => {
   );
 });
 
-test('the Feishu candidate satisfies the complete channel test policy', () => {
+test('the channel candidates satisfy the complete test policy', () => {
   assert.doesNotThrow(() => verifyTestPolicy({ root: ROOT }));
 });
 
@@ -46,7 +46,7 @@ test('channel policy fails closed when its scan root is missing', () => {
   assert.throws(() => verifyTestPolicy({ root: missing }), /scan root is missing/);
 });
 
-test('the channel policy protects its guard and Feishu safety tests', () => {
+test('the channel policy protects its guard and channel safety tests', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts', 'critical-test-files.json'), 'utf8'));
   const paths = manifest.files.map((entry) => entry.path);
   for (const expected of [
@@ -62,6 +62,12 @@ test('the channel policy protects its guard and Feishu safety tests', () => {
     'scripts/critical-test-files.json',
     'scripts/verify.mjs',
     'scripts/verify-package.mjs',
+  ]) assert.ok(paths.includes(expected), expected);
+  for (const expected of [
+    'test/weixin-repository-contract.test.mjs',
+    'channels/002_weixin/test/protocol.test.ts',
+    'scripts/verify-weixin-package.mjs',
+    'channels/002_weixin/provenance/upstream.json',
   ]) assert.ok(paths.includes(expected), expected);
   assert.doesNotThrow(() => verifyCriticalTestFiles(ROOT, manifest));
 });

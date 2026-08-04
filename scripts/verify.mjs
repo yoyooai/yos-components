@@ -11,6 +11,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const DEFAULT_TEST_SUITES = [
   { id: 'repository', label: 'repository tests', command: 'npm', args: ['test'], cwd: '.' },
   { id: 'feishu', label: 'Feishu tests', command: 'npm', args: ['test'], cwd: 'channels/001_feishu' },
+  { id: 'weixin', label: 'Weixin tests', command: 'npm', args: ['test'], cwd: 'channels/002_weixin' },
 ];
 
 export const DEFAULT_STEPS = [
@@ -22,7 +23,6 @@ export const DEFAULT_STEPS = [
     '--registry=https://registry.npmjs.org',
   ]],
   ['Feishu package contract', process.execPath, ['scripts/verify-package.mjs']],
-  ['Weixin tests', 'npm', ['test', '--prefix', 'channels/002_weixin']],
   ['Weixin audit', 'npm', [
     'audit', '--prefix', 'channels/002_weixin', '--audit-level=low',
     '--registry=https://registry.npmjs.org',
