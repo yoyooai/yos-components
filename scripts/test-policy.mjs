@@ -188,8 +188,13 @@ export function verifyTestBaselineGuard(root) {
   const verifySource = fs.readFileSync(path.join(root, 'scripts', 'verify.mjs'), 'utf8');
   const testsIndex = /^\s*const counts = runTestSuitesImpl\(\{\s*$/m.exec(verifySource)?.index ?? -1;
   const validatorIndex = /^\s*return verifyRecordedTestCountsImpl\(counts, testSuites, testBaselines\) === counts;\s*$/m.exec(verifySource)?.index ?? -1;
-  const gateIndex = /^\s*const countsVerified = executeTestGateImpl\(\{\s*$/m.exec(verifySource)?.index ?? -1;
-  const resultIndex = /^\s*if \(!countsVerified\) \{\s*$/m.exec(verifySource)?.index ?? -1;
+  const runIndex = verifySource.indexOf('export function runVerification({');
+  const runSource = runIndex >= 0 ? verifySource.slice(runIndex) : '';
+  const declarationIndex = /^\s*let countsVerified = false;\s*$/m.exec(runSource)?.index ?? -1;
+  const tryIndex = /^\s*try \{\s*$/m.exec(runSource)?.index ?? -1;
+  const gateIndex = /^\s*countsVerified = executeTestGateImpl\(\{\s*$/m.exec(runSource)?.index ?? -1;
+  const catchIndex = /^\s*\} catch \(error\) \{\s*$/m.exec(runSource)?.index ?? -1;
+  const resultIndex = /^\s*if \(!failed && !countsVerified\) \{\s*$/m.exec(runSource)?.index ?? -1;
   const stepsIndex = verifySource.indexOf('for (const [label, command, args] of steps)');
   if (testsIndex < 0 || gateIndex < 0) {
     throw new Error('executed-test gate is missing from channel verification');
@@ -200,8 +205,14 @@ export function verifyTestBaselineGuard(root) {
   if (resultIndex < 0) {
     throw new Error('executed-test verification result is not enforced');
   }
+  if (declarationIndex < 0 || tryIndex < 0 || declarationIndex > tryIndex) {
+    throw new Error('executed-test verification state must be declared before the verification try block');
+  }
+  if (catchIndex < 0 || resultIndex < catchIndex) {
+    throw new Error('executed-test verification result must be enforced after the verification catch block');
+  }
   if (stepsIndex < 0 || testsIndex > validatorIndex
-    || gateIndex > resultIndex || resultIndex > stepsIndex) {
+    || gateIndex < tryIndex || gateIndex > catchIndex) {
     throw new Error('executed-test gate must run before audits and packaging');
   }
 }
