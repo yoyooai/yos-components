@@ -88,5 +88,13 @@ test('the channel policy rejects a conditionally disabled executed-test gate', (
     () => verifyTestBaselineGuard(root),
     /executed-test gate is missing/,
   );
+  fs.writeFileSync(path.join(scripts, 'verify.mjs'), [
+    'try { runTestSuitesImpl({}); } catch { console.warn("test counts skipped"); }',
+    'for (const [label, command, args] of steps) {',
+  ].join('\n'));
+  assert.throws(
+    () => verifyTestBaselineGuard(root),
+    /executed-test gate is missing/,
+  );
   fs.rmSync(root, { recursive: true, force: true });
 });
