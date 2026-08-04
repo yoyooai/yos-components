@@ -73,6 +73,23 @@ checks:
 These are development-side results. XiaoA's independent mutation run remains
 the acceptance gate.
 
+### Executed-count guard follow-up
+
+The repository gate now parses TAP summaries instead of trusting exit code 0:
+
+- Repository approved minimum: 18; final development run: `20/20`.
+- Feishu approved minimum: 29; final development run: `29/29`.
+- Any failed, cancelled, skipped or todo test rejects the candidate.
+- Baseline changes require a matching approval digest, and the gate wiring is
+  protected against removal or conditional disabling.
+- The runtime permission test starts from an existing `0755` directory and
+  confirms that startup tightens it to `0700`.
+
+Deliberately narrowing the test glob, deleting a protected test, disabling the
+gate and removing the permission tightening all made verification fail. The
+final package remains 27 entries with content digest
+`6f0fcc4390e3c131169902a682f60ef935a06b26d46015cb5eb48556fc294444`.
+
 ## Isolated Lifecycle Verification
 
 1. The real post-install hook ran in a temporary HOME with fake `yos` and
