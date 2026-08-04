@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -8,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import {
   findDisabledTests,
   verifyCriticalTestFiles,
+  verifyTestBaselineGuard,
   verifyTestPolicy,
 } from '../scripts/test-policy.mjs';
 
@@ -62,4 +64,29 @@ test('the channel policy protects its guard and Feishu safety tests', () => {
     'scripts/verify-package.mjs',
   ]) assert.ok(paths.includes(expected), expected);
   assert.doesNotThrow(() => verifyCriticalTestFiles(ROOT, manifest));
+});
+
+test('the channel policy rejects a conditionally disabled executed-test gate', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'yos-channel-wiring-'));
+  const scripts = path.join(root, 'scripts');
+  fs.mkdirSync(scripts, { recursive: true });
+  const baselines = {
+    repository: { minimumPassed: 18 },
+    feishu: { minimumPassed: 29 },
+  };
+  const digest = crypto.createHash('sha256').update(JSON.stringify(baselines)).digest('hex');
+  fs.writeFileSync(path.join(scripts, 'test-baselines.json'), JSON.stringify({
+    version: 1,
+    baselines,
+    approvedDigest: digest,
+  }));
+  fs.writeFileSync(path.join(scripts, 'verify.mjs'), [
+    'false && runTestSuitesImpl({',
+    'for (const [label, command, args] of steps) {',
+  ].join('\n'));
+  assert.throws(
+    () => verifyTestBaselineGuard(root),
+    /executed-test gate is missing/,
+  );
+  fs.rmSync(root, { recursive: true, force: true });
 });

@@ -186,7 +186,8 @@ export function verifyTestBaselineGuard(root) {
   }
 
   const verifySource = fs.readFileSync(path.join(root, 'scripts', 'verify.mjs'), 'utf8');
-  const testsIndex = verifySource.indexOf('runTestSuitesImpl({');
+  const testCall = /^\s*runTestSuitesImpl\(\{\s*$/m.exec(verifySource);
+  const testsIndex = testCall?.index ?? -1;
   const stepsIndex = verifySource.indexOf('for (const [label, command, args] of steps)');
   if (testsIndex < 0) throw new Error('executed-test gate is missing from channel verification');
   if (stepsIndex < 0 || testsIndex > stepsIndex) {
@@ -206,6 +207,7 @@ export function verifyTestPolicy({
   const scanPaths = trackedFiles(root, gitCommand)
     .filter((file) => TEST_FILE.test(file) || CONFIG_FILE.test(file));
   if (scanPaths.length === 0) throw new Error('test-policy scan found no tracked test or configuration files');
+  verifyCriticalTestFiles(root, readJson(criticalManifestPath, 'critical test manifest'));
   const findings = findDisabledTests(scanPaths.map((file) => ({
     path: file,
     source: fs.readFileSync(path.join(root, file), 'utf8'),
@@ -218,7 +220,6 @@ export function verifyTestPolicy({
       .map((entry) => `${entry.path}:${entry.line} ${entry.kind}`)
       .join('\n')}`);
   }
-  verifyCriticalTestFiles(root, readJson(criticalManifestPath, 'critical test manifest'));
   verifyTestBaselineGuard(root);
   return { scannedFiles: scanPaths.length };
 }
