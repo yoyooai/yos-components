@@ -16,17 +16,25 @@ test('API origins are restricted to credential-free Tencent Weixin HTTPS hosts',
   ]) assert.throws(() => normalizeWeixinBaseUrl(value), /invalid_weixin_api_origin/);
 });
 
-test('API rejects an invalid origin before network access', async () => {
+test('API rejects every invalid origin shape before network access', async () => {
   let called = false;
   const previous = globalThis.fetch;
   globalThis.fetch = async () => { called = true; throw new Error('unexpected'); };
   try {
-    await assert.rejects(() => apiPostFetch({
-      baseUrl: 'http://ilinkai.weixin.qq.com',
-      endpoint: 'ilink/bot/getupdates',
-      body: '{}',
-      label: 'test',
-    }), /invalid_weixin_api_origin/);
+    for (const baseUrl of [
+      'http://ilinkai.weixin.qq.com',
+      'https://user:pass@ilinkai.weixin.qq.com',
+      'https://ilinkai.weixin.qq.com?token=secret',
+      'https://ilinkai.weixin.qq.com#secret',
+      'https://weixin.qq.com.example.test',
+    ]) {
+      await assert.rejects(() => apiPostFetch({
+        baseUrl,
+        endpoint: 'ilink/bot/getupdates',
+        body: '{}',
+        label: 'test',
+      }), /invalid_weixin_api_origin/);
+    }
     assert.equal(called, false);
   } finally {
     globalThis.fetch = previous;
