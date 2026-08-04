@@ -11,7 +11,7 @@ import {
   weixinMessageToMsgContext,
 } from './messaging/inbound.ts';
 import { getSyncBufFilePath, loadGetUpdatesBuf, saveGetUpdatesBuf } from './storage/sync-buf.ts';
-import { resolveStateDir } from './storage/state-dir.ts';
+import { ensurePrivateStateDir, resolveStateDir } from './storage/state-dir.ts';
 import { logger } from './util/logger.ts';
 import { buildWeixinEndpoint, deliverToC4 } from './yos/c4.ts';
 
@@ -136,7 +136,7 @@ async function shutdown(): Promise<void> {
   await Promise.allSettled([...monitors.values()].map((monitor) => monitor.promise));
 }
 
-fs.mkdirSync(path.join(resolveStateDir(), 'logs'), { recursive: true, mode: 0o700 });
+fs.mkdirSync(path.join(ensurePrivateStateDir(), 'logs'), { recursive: true, mode: 0o700 });
 logger.info('service starting');
 reconcileAccounts();
 const reconcileTimer = setInterval(reconcileAccounts, 10_000);

@@ -56,6 +56,7 @@ test('Weixin stays online under PM2 with Node and no Bun in PATH', async () => {
     assert.equal(service.pm2_env.status, 'online');
     assert.equal(service.pm2_env.exec_interpreter, 'node');
     assert.equal(service.pm2_env.restart_time, 0);
+    assert.equal(fs.statSync(dataDir).mode & 0o777, 0o700);
   } finally {
     runPm2(pm2, ['kill', '--silent'], env);
     fs.rmSync(root, { recursive: true, force: true });
