@@ -1,0 +1,23 @@
+{
+  "repository": "https://github.com/Tencent/openclaw-weixin",
+  "commit": "cef0bfc390393f716903e16d50408118047f87e0",
+  "version": "2.4.6",
+  "commitDate": "2026-06-25T14:54:56+08:00",
+  "archiveSha256": "bf8ac73aac9977a52038b5fa8141607e8cd44f88fc6347e0c154ab63bc9c549c",
+  "license": "MIT",
+  "importedAt": "2026-08-04",
+  "included": [
+    "API request and response types",
+    "iLink HTTP protocol client",
+    "QR login protocol",
+    "message normalization and context-token handling",
+    "text sending and markdown filtering",
+    "redaction and identifier utilities"
+  ],
+  "adapted": [
+    "OpenClaw plugin host integration replaced by YOS C4",
+    "OpenClaw state paths replaced by YOS component data paths",
+    "OpenClaw account configuration replaced by private local account storage",
+    "OpenClaw runtime logging replaced by YOS component logging"
+  ]
+}
