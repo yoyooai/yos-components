@@ -66,6 +66,23 @@ export function verifyRecordedTestCounts(counts, testSuites, testBaselines) {
   return counts;
 }
 
+export function executeTestGate({
+  root,
+  testSuites,
+  testBaselines,
+  onStep,
+  runTestSuitesImpl,
+  verifyRecordedTestCountsImpl,
+}) {
+  const counts = runTestSuitesImpl({
+    root,
+    testSuites,
+    testBaselines,
+    onStep,
+  });
+  return verifyRecordedTestCountsImpl(counts, testSuites, testBaselines) === counts;
+}
+
 export function runVerification({
   root = ROOT,
   testSuites = DEFAULT_TEST_SUITES,
@@ -74,18 +91,23 @@ export function runVerification({
   verifyTestPolicyImpl = verifyTestPolicy,
   runTestSuitesImpl = runTestSuites,
   verifyRecordedTestCountsImpl = verifyRecordedTestCounts,
+  executeTestGateImpl = executeTestGate,
   onStep = () => {},
 } = {}) {
   try {
     verifyTestPolicyImpl({ root });
     const approvedBaselines = testBaselines ?? loadApprovedTestBaselines(path.join(root, 'scripts', 'test-baselines.json'));
-    const executedTestCounts = runTestSuitesImpl({
+    const countsVerified = executeTestGateImpl({
       root,
       testSuites,
       testBaselines: approvedBaselines,
       onStep,
+      runTestSuitesImpl,
+      verifyRecordedTestCountsImpl,
     });
-    verifyRecordedTestCountsImpl(executedTestCounts, testSuites, approvedBaselines);
+    if (!countsVerified) {
+      throw new Error('executed-test counts were never verified');
+    }
     for (const [label, command, args] of steps) {
       onStep(label);
       console.log(`\n[verify] ${label}`);
