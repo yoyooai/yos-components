@@ -3,7 +3,13 @@ import { spawnSync } from 'node:child_process';
 const steps = [
   ['repository tests', process.execPath, ['--test', 'test/repository-contract.test.mjs']],
   ['Feishu tests', 'npm', ['test', '--prefix', 'channels/001_feishu']],
-  ['Feishu audit', 'npm', ['audit', '--prefix', 'channels/001_feishu', '--audit-level=high']],
+  ['Feishu audit', 'npm', [
+    'audit',
+    '--prefix',
+    'channels/001_feishu',
+    '--audit-level=low',
+    '--registry=https://registry.npmjs.org',
+  ]],
   ['Feishu package contract', process.execPath, ['scripts/verify-package.mjs']],
 ];
 
