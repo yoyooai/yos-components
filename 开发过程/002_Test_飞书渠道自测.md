@@ -99,10 +99,12 @@ Its final unpacked size is 215,274 bytes.
 - Feishu approved minimum remains 29/29.
 - Test execution and count validation return an explicit confirmation that must
   be consumed before audit or packaging steps.
-- A warning-only outer wrapper that swallows the test failure returns false and
-  cannot produce a successful verification result.
-- Static policy rejects removal of the final validator line, gate call, or
-  final result check.
+- A throwing test gate is caught as a verification failure. The confirmation
+  state and final decision live outside the verification try/catch, so a nested
+  warning-only wrapper cannot make later successful steps produce PASS.
+- Static policy rejects removal of the final validator line or gate call, and
+  rejects moving the confirmation declaration or final decision back inside
+  the verification try/catch.
 - Final npm run verify: PASS; audit 0 vulnerabilities; Feishu package remains
   27 entries with content digest
   6f0fcc4390e3c131169902a682f60ef935a06b26d46015cb5eb48556fc294444.
