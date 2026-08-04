@@ -44,3 +44,19 @@ test('channel verification fails before package steps when executed counts are l
   }), false);
   assert.deepEqual(calls, ['policy', 'fixture tests']);
 });
+
+test('channel verification rejects a no-op test runner before package steps', () => {
+  const calls = [];
+  assert.equal(runVerification({
+    verifyTestPolicyImpl: () => calls.push('policy'),
+    runTestSuitesImpl: () => {
+      calls.push('tests');
+      return undefined;
+    },
+    testSuites: [{ id: 'repository', label: 'fixture tests' }],
+    testBaselines: { repository: { minimumPassed: 18 } },
+    steps: [['package', process.execPath, ['-e', 'process.exit(0)']]],
+    onStep: (label) => calls.push(label),
+  }), false);
+  assert.deepEqual(calls, ['policy', 'tests']);
+});

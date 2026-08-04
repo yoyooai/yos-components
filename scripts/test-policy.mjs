@@ -186,7 +186,7 @@ export function verifyTestBaselineGuard(root) {
   }
 
   const verifySource = fs.readFileSync(path.join(root, 'scripts', 'verify.mjs'), 'utf8');
-  const testCall = /^\s*runTestSuitesImpl\(\{\s*$/m.exec(verifySource);
+  const testCall = /^\s*(?:const executedTestCounts = )?runTestSuitesImpl\(\{\s*$/m.exec(verifySource);
   const testsIndex = testCall?.index ?? -1;
   const stepsIndex = verifySource.indexOf('for (const [label, command, args] of steps)');
   if (testsIndex < 0) throw new Error('executed-test gate is missing from channel verification');
