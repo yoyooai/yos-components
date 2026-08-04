@@ -29,7 +29,8 @@ test('C4 delivery carries the original Feishu message ID as the idempotency key'
 test('saved configuration is private to the YOS account', async () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'yos-feishu-config-'));
   const dataDir = path.join(home, 'yos', 'components', 'feishu');
-  fs.mkdirSync(dataDir, { recursive: true, mode: 0o700 });
+  fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
+  fs.chmodSync(dataDir, 0o755);
 
   const previousHome = process.env.HOME;
   process.env.HOME = home;
@@ -38,6 +39,7 @@ test('saved configuration is private to the YOS account', async () => {
     moduleUrl.searchParams.set('test', `${Date.now()}-${Math.random()}`);
     const { CONFIG_PATH, saveConfig } = await import(moduleUrl.href);
     assert.equal(saveConfig({ enabled: true }), true);
+    assert.equal(fs.statSync(dataDir).mode & 0o777, 0o700);
     assert.equal(fs.statSync(CONFIG_PATH).mode & 0o777, 0o600);
   } finally {
     if (previousHome === undefined) delete process.env.HOME;
