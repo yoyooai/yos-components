@@ -31,6 +31,7 @@ export const DEFAULT_STEPS = [
 ];
 
 export function runTestSuites({ root, testSuites, testBaselines, onStep = () => {} }) {
+  const counts = {};
   for (const suite of testSuites) {
     const baseline = testBaselines[suite.id];
     if (!baseline) throw new Error(`missing test baseline: ${suite.id}`);
@@ -48,8 +49,21 @@ export function runTestSuites({ root, testSuites, testBaselines, onStep = () => 
       throw new Error(`${suite.label} exited with status ${result.status}`);
     }
     const passed = verifyTapResult(`${result.stdout || ''}\n${result.stderr || ''}`, baseline, suite.label);
+    counts[suite.id] = passed;
     console.log(`[verify] ${suite.label}: ${passed} passed`);
   }
+  return counts;
+}
+
+export function verifyRecordedTestCounts(counts, testSuites, testBaselines) {
+  for (const suite of testSuites) {
+    const minimum = testBaselines[suite.id]?.minimumPassed;
+    const passed = counts?.[suite.id];
+    if (!Number.isInteger(passed) || !Number.isInteger(minimum) || passed < minimum) {
+      throw new Error(`${suite.label} executed-test count is missing or below approved minimum ${minimum}`);
+    }
+  }
+  return counts;
 }
 
 export function runVerification({
@@ -59,16 +73,19 @@ export function runVerification({
   steps = DEFAULT_STEPS,
   verifyTestPolicyImpl = verifyTestPolicy,
   runTestSuitesImpl = runTestSuites,
+  verifyRecordedTestCountsImpl = verifyRecordedTestCounts,
   onStep = () => {},
 } = {}) {
   try {
     verifyTestPolicyImpl({ root });
-    runTestSuitesImpl({
+    const approvedBaselines = testBaselines ?? loadApprovedTestBaselines(path.join(root, 'scripts', 'test-baselines.json'));
+    const executedTestCounts = runTestSuitesImpl({
       root,
       testSuites,
-      testBaselines: testBaselines ?? loadApprovedTestBaselines(path.join(root, 'scripts', 'test-baselines.json')),
+      testBaselines: approvedBaselines,
       onStep,
     });
+    verifyRecordedTestCountsImpl(executedTestCounts, testSuites, approvedBaselines);
     for (const [label, command, args] of steps) {
       onStep(label);
       console.log(`\n[verify] ${label}`);
