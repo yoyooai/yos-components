@@ -8,7 +8,7 @@
 | 3 | Package and isolated lifecycle verification | Complete |
 | 4 | XiaoA independent real Feishu acceptance | Pending |
 | 5 | Immutable artifact, component tag and Registry publication | Pending |
-| 6 | Weixin upstream lock and YOS adaptation | In progress |
+| 6 | Weixin upstream lock and YOS adaptation | Complete |
 | 7 | XiaoA independent real Weixin acceptance | Pending |
 
 The first formal component is `channels/001_feishu`. Other channels may be
