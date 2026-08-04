@@ -21,7 +21,8 @@ import { downloadImage, downloadFile } from '../src/lib/message.js';
 import { DATA_DIR } from '../src/lib/config.js';
 
 const MEDIA_DIR = path.join(DATA_DIR, 'media');
-fs.mkdirSync(MEDIA_DIR, { recursive: true });
+fs.mkdirSync(MEDIA_DIR, { recursive: true, mode: 0o700 });
+fs.chmodSync(MEDIA_DIR, 0o700);
 
 const args = process.argv.slice(2);
 if (args.length < 3) {

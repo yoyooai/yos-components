@@ -123,8 +123,11 @@ export function getConfig() {
 export function saveConfig(newConfig) {
   const tmpPath = CONFIG_PATH + '.tmp';
   try {
+    fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+    fs.chmodSync(DATA_DIR, 0o700);
     fs.writeFileSync(tmpPath, JSON.stringify(newConfig, null, 2), { mode: 0o600 });
     fs.renameSync(tmpPath, CONFIG_PATH);
+    fs.chmodSync(CONFIG_PATH, 0o600);
     config = newConfig;
     return true;
   } catch (err) {

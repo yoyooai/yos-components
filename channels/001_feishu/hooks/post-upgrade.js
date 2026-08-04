@@ -42,8 +42,9 @@ function backupConfigFile(filePath) {
 function atomicWriteJSON(filePath, obj) {
   const tmpPath = `${filePath}.tmp.${process.pid}.${Date.now()}`;
   try {
-    fs.writeFileSync(tmpPath, JSON.stringify(obj, null, 2));
+    fs.writeFileSync(tmpPath, JSON.stringify(obj, null, 2), { mode: 0o600 });
     fs.renameSync(tmpPath, filePath);
+    fs.chmodSync(filePath, 0o600);
   } catch (err) {
     try { fs.unlinkSync(tmpPath); } catch {}
     throw err;

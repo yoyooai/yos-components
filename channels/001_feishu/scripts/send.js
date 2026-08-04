@@ -368,10 +368,10 @@ function markTypingDone(msgId) {
   if (!msgId) return;
   try {
     const safeMsgId = String(msgId).replace(/[^a-zA-Z0-9_-]/g, '_');
-    fs.mkdirSync(TYPING_DIR, { recursive: true });
+    fs.mkdirSync(TYPING_DIR, { recursive: true, mode: 0o700 });
     const donePath = path.resolve(TYPING_DIR, `${safeMsgId}.done`);
     if (!donePath.startsWith(path.resolve(TYPING_DIR) + path.sep)) return;
-    fs.writeFileSync(donePath, String(Date.now()));
+    fs.writeFileSync(donePath, String(Date.now()), { mode: 0o600 });
   } catch {
     // Non-critical
   }

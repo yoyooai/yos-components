@@ -23,6 +23,7 @@ test('C4 delivery carries the original Feishu message ID as the idempotency key'
   assert.match(source, /function sendToC4\(source, endpoint, messageId, content, onReject\)/);
   assert.match(source, /'--message-id', messageId/);
   assert.doesNotMatch(source, /sendToC4\('feishu', endpoint, msg, /);
+  assert.match(source, /processedMessages\.delete\(messageId\)/);
 });
 
 test('saved configuration is private to the YOS account', async () => {

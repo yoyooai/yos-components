@@ -204,7 +204,7 @@ export async function downloadImage(messageId, imageKey, savePath) {
     });
 
     if (res.data && res.data.length > 0) {
-      fs.writeFileSync(savePath, res.data);
+      fs.writeFileSync(savePath, res.data, { mode: 0o600 });
       return { success: true, path: savePath, message: 'Image downloaded successfully' };
     } else {
       return { success: false, message: 'No data in response' };
@@ -292,7 +292,7 @@ export async function downloadFile(messageId, fileKey, savePath) {
     });
 
     if (res.data && res.data.length > 0) {
-      fs.writeFileSync(savePath, res.data);
+      fs.writeFileSync(savePath, res.data, { mode: 0o600 });
       return { success: true, path: savePath, message: 'File downloaded successfully' };
     } else {
       return { success: false, message: 'No data in response' };

@@ -129,7 +129,7 @@ export function requireMinCoreVersion() {
   }
   if (!coreVersion) {
     console.error(
-      `${LOG_PREFIX} requires YOS Core > ${MIN_CORE_VERSION}, but \`yos --version\` could not be read.`
+      `${LOG_PREFIX} requires YOS Core >= ${MIN_CORE_VERSION} and < ${MAX_CORE_VERSION}, but \`yos --version\` could not be read.`
     );
     console.error(
       `${LOG_PREFIX} Aborting to avoid a broken install. Please run: yos upgrade --self  (then retry).`

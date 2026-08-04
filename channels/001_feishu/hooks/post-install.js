@@ -42,6 +42,19 @@ const INITIAL_CONFIG = {
 
 const isInteractive = process.stdin.isTTY === true;
 
+function writePrivateConfig(config) {
+  const configPath = path.join(DATA_DIR, 'config.json');
+  const tempPath = `${configPath}.tmp.${process.pid}.${Date.now()}`;
+  try {
+    fs.writeFileSync(tempPath, JSON.stringify(config, null, 2), { mode: 0o600 });
+    fs.renameSync(tempPath, configPath);
+    fs.chmodSync(configPath, 0o600);
+  } catch (error) {
+    try { fs.unlinkSync(tempPath); } catch {}
+    throw error;
+  }
+}
+
 /**
  * Prompt user for input (only works in terminal mode).
  */
@@ -70,9 +83,10 @@ console.log('  - media/');
 const configPath = path.join(DATA_DIR, 'config.json');
 if (!fs.existsSync(configPath)) {
   console.log('\nCreating default config.json...');
-  fs.writeFileSync(configPath, JSON.stringify(INITIAL_CONFIG, null, 2), { mode: 0o600 });
+  writePrivateConfig(INITIAL_CONFIG);
   console.log('  - config.json created');
 } else {
+  fs.chmodSync(configPath, 0o600);
   console.log('\nConfig already exists, skipping.');
 }
 
@@ -123,7 +137,7 @@ if (isInteractive) {
     }
   }
 
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), { mode: 0o600 });
+  writePrivateConfig(config);
   console.log(`\n  Connection mode set to: ${mode}`);
 }
 

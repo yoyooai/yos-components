@@ -44,7 +44,8 @@ const INTERNAL_SECRET = crypto.randomUUID();
 // Persist token to file so send.js (spawned by C4 in a separate process tree) can read it
 const TOKEN_FILE = path.join(DATA_DIR, '.internal-token');
 try {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+  fs.chmodSync(DATA_DIR, 0o700);
   fs.writeFileSync(TOKEN_FILE, INTERNAL_SECRET, { mode: 0o600 });
 } catch (err) {
   console.error(`[feishu] Failed to write internal token file: ${err.message}`);
@@ -55,8 +56,8 @@ console.log(`[feishu] Data directory: ${DATA_DIR}`);
 // Ensure directories exist
 const LOGS_DIR = path.join(DATA_DIR, 'logs');
 const MEDIA_DIR = path.join(DATA_DIR, 'media');
-fs.mkdirSync(LOGS_DIR, { recursive: true });
-fs.mkdirSync(MEDIA_DIR, { recursive: true });
+fs.mkdirSync(LOGS_DIR, { recursive: true, mode: 0o700 });
+fs.mkdirSync(MEDIA_DIR, { recursive: true, mode: 0o700 });
 
 // State files
 const CURSORS_PATH = path.join(DATA_DIR, 'group-cursors.json');
@@ -129,7 +130,7 @@ function loadCursors() {
 function saveCursors(cursors) {
   const tmpPath = CURSORS_PATH + '.tmp';
   try {
-    fs.writeFileSync(tmpPath, JSON.stringify(cursors, null, 2));
+    fs.writeFileSync(tmpPath, JSON.stringify(cursors, null, 2), { mode: 0o600 });
     fs.renameSync(tmpPath, CURSORS_PATH);
     return true;
   } catch (err) {
@@ -215,7 +216,7 @@ async function removeTypingIndicator(messageId) {
  * When found, remove the typing indicator and clean up the marker.
  */
 const TYPING_DIR = path.join(DATA_DIR, 'typing');
-fs.mkdirSync(TYPING_DIR, { recursive: true });
+fs.mkdirSync(TYPING_DIR, { recursive: true, mode: 0o700 });
 
 // Clean up stale typing markers from previous run
 try {
@@ -330,7 +331,7 @@ function persistUserCache() {
   }
   const tmpPath = USER_CACHE_PATH + '.tmp';
   try {
-    fs.writeFileSync(tmpPath, JSON.stringify(obj, null, 2));
+    fs.writeFileSync(tmpPath, JSON.stringify(obj, null, 2), { mode: 0o600 });
     fs.renameSync(tmpPath, USER_CACHE_PATH);
   } catch (err) {
     console.log(`[feishu] Failed to persist user cache: ${err.message}`);
@@ -586,7 +587,8 @@ async function logMessage(chatType, chatId, userId, openId, text, messageId, tim
     return;
   }
   try {
-    fs.appendFileSync(logFile, logLine);
+    fs.appendFileSync(logFile, logLine, { encoding: 'utf8', mode: 0o600 });
+    fs.chmodSync(logFile, 0o600);
   } catch (err) {
     console.error(`[feishu] Failed to write log: ${err.message}`);
   }
@@ -789,6 +791,7 @@ function sendToC4(source, endpoint, messageId, content, onReject) {
           if (onReject) onReject(retryResponse.error.message);
         } else {
           console.error(`[feishu] C4 send failed after retry: ${retryError.message}`);
+          processedMessages.delete(messageId);
         }
       });
     }, 2000);
