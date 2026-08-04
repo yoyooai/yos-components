@@ -1,0 +1,23 @@
+{
+  "repository": "https://github.com/zylos-ai/zylos-feishu",
+  "commit": "877690965798b99979f21211290d6f284be787b7",
+  "version": "0.3.4",
+  "commitDate": "2026-08-03T14:38:07Z",
+  "archiveSha256": "a7ceff5a7633e9a9041bbefaa5426108ce520b1b6b2bb5ce43e9da9a0aeac398",
+  "importedAt": "2026-08-04",
+  "included": [
+    "src",
+    "hooks",
+    "scripts",
+    "test",
+    "ecosystem.config.cjs",
+    "package-lock.json",
+    "SKILL.md",
+    "LICENSE"
+  ],
+  "excluded": [
+    "upstream product documentation",
+    "upstream logo and branding assets",
+    "upstream repository automation"
+  ]
+}
