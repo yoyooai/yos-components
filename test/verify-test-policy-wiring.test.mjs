@@ -1,11 +1,23 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { DEFAULT_TEST_SUITES, runVerification } from '../scripts/verify.mjs';
+import { DEFAULT_STEPS, DEFAULT_TEST_SUITES, runVerification } from '../scripts/verify.mjs';
 
 test('channel verification runs every root repository test', () => {
   assert.equal(DEFAULT_TEST_SUITES[0].id, 'repository');
   assert.deepEqual(DEFAULT_TEST_SUITES[0].args, ['test']);
+});
+
+test('channel verification counts Weixin tests and runs its package gate independently', () => {
+  assert.deepEqual(DEFAULT_TEST_SUITES.map(({ id }) => id), ['repository', 'feishu', 'weixin']);
+  const packageStep = DEFAULT_STEPS.find(([label]) => label === 'Weixin package contract');
+  assert.ok(packageStep, 'missing independent Weixin package step');
+  assert.equal(runVerification({
+    verifyTestPolicyImpl: () => {},
+    testSuites: [],
+    testBaselines: {},
+    steps: [packageStep],
+  }), true);
 });
 
 test('channel verification runs the test policy before repository steps and fails closed', () => {
