@@ -72,7 +72,7 @@ test('the channel policy protects its guard and channel safety tests', () => {
   assert.doesNotThrow(() => verifyCriticalTestFiles(ROOT, manifest));
 });
 
-test('the channel policy rejects a conditionally disabled executed-test gate', () => {
+test('the channel policy rejects a disabled, wrapped, or unvalidated executed-test gate', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'yos-channel-wiring-'));
   const scripts = path.join(root, 'scripts');
   fs.mkdirSync(scripts, { recursive: true });
@@ -86,21 +86,44 @@ test('the channel policy rejects a conditionally disabled executed-test gate', (
     baselines,
     approvedDigest: digest,
   }));
-  fs.writeFileSync(path.join(scripts, 'verify.mjs'), [
-    'false && runTestSuitesImpl({',
+  const healthy = [
+    'const counts = runTestSuitesImpl({',
+    'return verifyRecordedTestCountsImpl(counts, testSuites, testBaselines) === counts;',
+    'const countsVerified = executeTestGateImpl({',
+    'if (!countsVerified) {',
     'for (const [label, command, args] of steps) {',
-  ].join('\n'));
+  ].join('\n');
+  fs.writeFileSync(path.join(scripts, 'verify.mjs'), healthy.replace(
+    'const countsVerified = executeTestGateImpl({',
+    'false && runTestSuitesImpl({',
+  ));
   assert.throws(
     () => verifyTestBaselineGuard(root),
     /executed-test gate is missing/,
   );
-  fs.writeFileSync(path.join(scripts, 'verify.mjs'), [
-    'try { runTestSuitesImpl({}); } catch { console.warn("test counts skipped"); }',
-    'for (const [label, command, args] of steps) {',
-  ].join('\n'));
+  fs.writeFileSync(path.join(scripts, 'verify.mjs'), healthy.replace(
+    'const countsVerified = executeTestGateImpl({',
+    'try { executeTestGateImpl({',
+  ));
   assert.throws(
     () => verifyTestBaselineGuard(root),
     /executed-test gate is missing/,
+  );
+  fs.writeFileSync(path.join(scripts, 'verify.mjs'), healthy.replace(
+    'return verifyRecordedTestCountsImpl(counts, testSuites, testBaselines) === counts;\n',
+    '',
+  ));
+  assert.throws(
+    () => verifyTestBaselineGuard(root),
+    /executed-test count validator is missing/,
+  );
+  fs.writeFileSync(path.join(scripts, 'verify.mjs'), healthy.replace(
+    'if (!countsVerified) {',
+    'if (false && !countsVerified) {',
+  ));
+  assert.throws(
+    () => verifyTestBaselineGuard(root),
+    /verification result is not enforced/,
   );
   fs.rmSync(root, { recursive: true, force: true });
 });

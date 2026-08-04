@@ -186,11 +186,22 @@ export function verifyTestBaselineGuard(root) {
   }
 
   const verifySource = fs.readFileSync(path.join(root, 'scripts', 'verify.mjs'), 'utf8');
-  const testCall = /^\s*(?:const executedTestCounts = )?runTestSuitesImpl\(\{\s*$/m.exec(verifySource);
-  const testsIndex = testCall?.index ?? -1;
+  const testsIndex = /^\s*const counts = runTestSuitesImpl\(\{\s*$/m.exec(verifySource)?.index ?? -1;
+  const validatorIndex = /^\s*return verifyRecordedTestCountsImpl\(counts, testSuites, testBaselines\) === counts;\s*$/m.exec(verifySource)?.index ?? -1;
+  const gateIndex = /^\s*const countsVerified = executeTestGateImpl\(\{\s*$/m.exec(verifySource)?.index ?? -1;
+  const resultIndex = /^\s*if \(!countsVerified\) \{\s*$/m.exec(verifySource)?.index ?? -1;
   const stepsIndex = verifySource.indexOf('for (const [label, command, args] of steps)');
-  if (testsIndex < 0) throw new Error('executed-test gate is missing from channel verification');
-  if (stepsIndex < 0 || testsIndex > stepsIndex) {
+  if (testsIndex < 0 || gateIndex < 0) {
+    throw new Error('executed-test gate is missing from channel verification');
+  }
+  if (validatorIndex < 0) {
+    throw new Error('executed-test count validator is missing from channel verification');
+  }
+  if (resultIndex < 0) {
+    throw new Error('executed-test verification result is not enforced');
+  }
+  if (stepsIndex < 0 || testsIndex > validatorIndex
+    || gateIndex > resultIndex || resultIndex > stepsIndex) {
     throw new Error('executed-test gate must run before audits and packaging');
   }
 }
