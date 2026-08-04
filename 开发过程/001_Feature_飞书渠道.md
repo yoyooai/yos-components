@@ -23,5 +23,17 @@ behavioral differences harder to audit.
 
 ## Verification Status
 
-Implementation and verification are in progress. No real Feishu account has
-been used and no package has been published.
+Development implementation and isolated verification are complete at
+implementation commit `181896e`. The source remains a candidate: no real
+Feishu account has been used and no package has been published.
+
+## Test Results
+
+- Repository contract tests: 4/4 passed.
+- Component tests: 29/29 passed.
+- Dependency audit: 0 known vulnerabilities.
+- Package: 27 entries, 56,633 bytes, deterministic across two builds.
+- Local YOS add and purge: passed against YOS Core `fe908f2`.
+
+The detailed evidence and remaining acceptance work are recorded in
+`开发过程/002_Test_飞书渠道自测.md`.

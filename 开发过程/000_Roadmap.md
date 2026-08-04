@@ -3,9 +3,9 @@
 | Stage | Scope | Status |
 |---|---|---|
 | 0 | Repository boundary and independent channel policy | Complete |
-| 1 | Feishu upstream lock and repository contracts | In progress |
-| 2 | Feishu runtime import and YOS adaptation | Pending |
-| 3 | Package and isolated lifecycle verification | Pending |
+| 1 | Feishu upstream lock and repository contracts | Complete |
+| 2 | Feishu runtime import and YOS adaptation | Complete |
+| 3 | Package and isolated lifecycle verification | Complete |
 | 4 | XiaoA independent real Feishu acceptance | Pending |
 | 5 | Immutable artifact, component tag and Registry publication | Pending |
 
