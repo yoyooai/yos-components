@@ -45,9 +45,9 @@ function run(command, args, options = {}) {
   return result.stdout;
 }
 
-function readPackManifest() {
+function readPackManifest(component) {
   const output = run('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
-    cwd: COMPONENT,
+    cwd: component,
   });
   const report = JSON.parse(output);
   if (!Array.isArray(report) || report.length !== 1 || !Array.isArray(report[0].files)) {
@@ -56,20 +56,25 @@ function readPackManifest() {
   return report[0];
 }
 
-function trackedFiles() {
-  return new Set(run('git', ['ls-files', '--', 'channels/001_feishu'])
+function trackedFiles(root, component) {
+  const relativeComponent = path.relative(root, component);
+  return new Set(run('git', ['ls-files', '--', relativeComponent], { cwd: root })
     .split('\n')
     .filter(Boolean)
-    .map((file) => path.relative('channels/001_feishu', file)));
+    .map((file) => path.relative(relativeComponent, file)));
 }
 
-function verify() {
-  const manifest = readPackManifest();
+export function verifyPackage({
+  root = ROOT,
+  component = COMPONENT,
+  requiredFiles = REQUIRED_FILES,
+} = {}) {
+  const manifest = readPackManifest(component);
   const files = manifest.files.map(({ path: file }) => file).sort();
   const fileSet = new Set(files);
-  const tracked = trackedFiles();
+  const tracked = trackedFiles(root, component);
 
-  for (const required of REQUIRED_FILES) {
+  for (const required of requiredFiles) {
     if (!fileSet.has(required)) throw new Error(`required package file is missing: ${required}`);
   }
 
@@ -82,7 +87,7 @@ function verify() {
       throw new Error(`package contains an untracked file: ${relativePath}`);
     }
 
-    const absolutePath = path.join(COMPONENT, relativePath);
+    const absolutePath = path.join(component, relativePath);
     const bytes = fs.readFileSync(absolutePath);
     const text = bytes.toString('utf8');
     for (const pattern of FORBIDDEN_CONTENT) {
@@ -102,9 +107,12 @@ function verify() {
   }, null, 2));
 }
 
-try {
-  verify();
-} catch (error) {
-  console.error(`[verify-package] ${error.message}`);
-  process.exit(1);
+const invokedPath = process.argv[1] ? fs.realpathSync(process.argv[1]) : '';
+if (invokedPath === fs.realpathSync(fileURLToPath(import.meta.url))) {
+  try {
+    verifyPackage();
+  } catch (error) {
+    console.error(`[verify-package] ${error.message}`);
+    process.exit(1);
+  }
 }
