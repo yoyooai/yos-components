@@ -5,6 +5,7 @@ module.exports = {
   apps: [{
     name: 'yos-weixin',
     script: 'src/index.ts',
+    interpreter: 'node',
     cwd: path.join(os.homedir(), 'yos/.claude/skills/weixin'),
     env: { NODE_ENV: 'production' },
     autorestart: true,
