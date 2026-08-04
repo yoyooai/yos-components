@@ -5,7 +5,11 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { findDisabledTests, verifyTestPolicy } from '../scripts/test-policy.mjs';
+import {
+  findDisabledTests,
+  verifyCriticalTestFiles,
+  verifyTestPolicy,
+} from '../scripts/test-policy.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -38,4 +42,24 @@ test('the Feishu candidate satisfies the complete channel test policy', () => {
 test('channel policy fails closed when its scan root is missing', () => {
   const missing = path.join(os.tmpdir(), `yos-channels-missing-${Date.now()}`);
   assert.throws(() => verifyTestPolicy({ root: missing }), /scan root is missing/);
+});
+
+test('the channel policy protects its guard and Feishu safety tests', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts', 'critical-test-files.json'), 'utf8'));
+  const paths = manifest.files.map((entry) => entry.path);
+  for (const expected of [
+    'test/test-policy.test.mjs',
+    'test/test-baseline-policy.test.mjs',
+    'test/verify-test-policy-wiring.test.mjs',
+    'test/repository-contract.test.mjs',
+    'test/runtime-permissions.test.mjs',
+    'test/feishu-package-policy.test.mjs',
+    'scripts/test-policy.mjs',
+    'scripts/test-baseline-policy.mjs',
+    'scripts/test-baselines.json',
+    'scripts/critical-test-files.json',
+    'scripts/verify.mjs',
+    'scripts/verify-package.mjs',
+  ]) assert.ok(paths.includes(expected), expected);
+  assert.doesNotThrow(() => verifyCriticalTestFiles(ROOT, manifest));
 });

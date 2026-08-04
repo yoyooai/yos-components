@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "files": [
+    { "path": "test/test-policy.test.mjs", "minimumTests": 1 },
+    { "path": "test/test-baseline-policy.test.mjs", "minimumTests": 1 },
+    { "path": "test/verify-test-policy-wiring.test.mjs", "minimumTests": 1 },
+    { "path": "test/repository-contract.test.mjs", "minimumTests": 1 },
+    { "path": "test/runtime-permissions.test.mjs", "minimumTests": 1 },
+    { "path": "test/feishu-package-policy.test.mjs", "minimumTests": 1 },
+    { "path": "scripts/test-policy.mjs" },
+    { "path": "scripts/test-baseline-policy.mjs" },
+    { "path": "scripts/test-baselines.json" },
+    { "path": "scripts/critical-test-files.json" },
+    { "path": "scripts/verify.mjs" },
+    { "path": "scripts/verify-package.mjs" }
+  ]
+}

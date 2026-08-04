@@ -19,7 +19,7 @@
   "scripts": {
     "start": "node src/index.js",
     "cli": "node src/cli.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test --test-reporter=tap test/*.test.js"
   },
   "larkCli": {
     "version": "1.0.81"

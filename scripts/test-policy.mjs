@@ -2,6 +2,10 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import {
+  loadApprovedTestBaselines,
+  verifyTapResult,
+} from './test-baseline-policy.mjs';
 
 const TEST_FILE = /(^|\/)(?:__tests__\/.*|tests?\/.*|[^/]+\.(?:test|spec))\.(?:[cm]?js|jsx|ts|tsx)$/;
 const CONFIG_FILE = /(^|\/)(?:jest\.config\.[^/]+|package\.json|run-[^/]*tests?\.[^/]+)$/;
@@ -9,6 +13,7 @@ const DISABLED_CALL = /\b(describe|it|test)\s*\.\s*(skip|todo|only)\s*\(|\b(xdes
 const JEST_IGNORE_PROPERTY = /\btestPathIgnorePatterns\s*:/g;
 const JEST_IGNORE_JSON_PROPERTY = /"testPathIgnorePatterns"\s*:/g;
 const JEST_IGNORE_CLI = /--testPathIgnorePatterns\b/g;
+const ACTIVE_TEST = /\btest\s*\(/g;
 
 function lineNumberAt(source, index) {
   return source.slice(0, index).split('\n').length;
@@ -128,10 +133,72 @@ function trackedFiles(root, gitCommand) {
   return files;
 }
 
+function countActiveTests(source) {
+  return [...stripCommentsAndStrings(source).matchAll(ACTIVE_TEST)].length;
+}
+
+export function verifyCriticalTestFiles(root, manifest) {
+  if (manifest.version !== 1 || !Array.isArray(manifest.files) || manifest.files.length === 0) {
+    throw new Error('critical test manifest has an unsupported or empty schema');
+  }
+  for (const entry of manifest.files) {
+    const filePath = path.join(root, entry.path);
+    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+      throw new Error(`missing critical file: ${entry.path}`);
+    }
+    if (entry.minimumTests !== undefined) {
+      const count = countActiveTests(fs.readFileSync(filePath, 'utf8'));
+      if (count < entry.minimumTests) {
+        throw new Error(`${entry.path}: expected at least ${entry.minimumTests} test case, found ${count}`);
+      }
+    }
+  }
+}
+
+function readJson(filePath, label) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    throw new Error(`could not read ${label}: ${error.message}`);
+  }
+}
+
+function mustReject(label, operation) {
+  try {
+    operation();
+  } catch {
+    return;
+  }
+  throw new Error(`${label} did not reject a below-baseline result`);
+}
+
+export function verifyTestBaselineGuard(root) {
+  const baselines = loadApprovedTestBaselines(path.join(root, 'scripts', 'test-baselines.json'));
+  for (const [id, baseline] of Object.entries(baselines)) {
+    mustReject(`${id} baseline guard`, () => verifyTapResult([
+      `# tests ${baseline.minimumPassed}`,
+      `# pass ${Math.max(0, baseline.minimumPassed - 1)}`,
+      '# fail 0',
+      '# cancelled 0',
+      '# skipped 0',
+      '# todo 0',
+    ].join('\n'), baseline, id));
+  }
+
+  const verifySource = fs.readFileSync(path.join(root, 'scripts', 'verify.mjs'), 'utf8');
+  const testsIndex = verifySource.indexOf('runTestSuitesImpl({');
+  const stepsIndex = verifySource.indexOf('for (const [label, command, args] of steps)');
+  if (testsIndex < 0) throw new Error('executed-test gate is missing from channel verification');
+  if (stepsIndex < 0 || testsIndex > stepsIndex) {
+    throw new Error('executed-test gate must run before audits and packaging');
+  }
+}
+
 export function verifyTestPolicy({
   root,
   gitCommand = 'git',
   allowlistPath = path.join(root, 'scripts', 'test-skip-allowlist.json'),
+  criticalManifestPath = path.join(root, 'scripts', 'critical-test-files.json'),
 } = {}) {
   if (!root || !fs.existsSync(root) || !fs.statSync(root).isDirectory()) {
     throw new Error('test-policy scan root is missing');
@@ -151,5 +218,7 @@ export function verifyTestPolicy({
       .map((entry) => `${entry.path}:${entry.line} ${entry.kind}`)
       .join('\n')}`);
   }
+  verifyCriticalTestFiles(root, readJson(criticalManifestPath, 'critical test manifest'));
+  verifyTestBaselineGuard(root);
   return { scannedFiles: scanPaths.length };
 }

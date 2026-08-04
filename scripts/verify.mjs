@@ -4,12 +4,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { verifyTestPolicy } from './test-policy.mjs';
+import { loadApprovedTestBaselines, verifyTapResult } from './test-baseline-policy.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+export const DEFAULT_TEST_SUITES = [
+  { id: 'repository', label: 'repository tests', command: 'npm', args: ['test'], cwd: '.' },
+  { id: 'feishu', label: 'Feishu tests', command: 'npm', args: ['test'], cwd: 'channels/001_feishu' },
+];
+
 export const DEFAULT_STEPS = [
-  ['repository tests', 'npm', ['test']],
-  ['Feishu tests', 'npm', ['test', '--prefix', 'channels/001_feishu']],
   ['Feishu audit', 'npm', [
     'audit',
     '--prefix',
@@ -20,14 +24,45 @@ export const DEFAULT_STEPS = [
   ['Feishu package contract', process.execPath, ['scripts/verify-package.mjs']],
 ];
 
+export function runTestSuites({ root, testSuites, testBaselines, onStep = () => {} }) {
+  for (const suite of testSuites) {
+    const baseline = testBaselines[suite.id];
+    if (!baseline) throw new Error(`missing test baseline: ${suite.id}`);
+    onStep(suite.label);
+    console.log(`\n[verify] ${suite.label}`);
+    const result = spawnSync(suite.command, suite.args, {
+      cwd: path.resolve(root, suite.cwd || '.'),
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+    if (result.error || result.status !== 0) {
+      if (result.stdout) process.stdout.write(result.stdout);
+      if (result.stderr) process.stderr.write(result.stderr);
+      if (result.error) throw result.error;
+      throw new Error(`${suite.label} exited with status ${result.status}`);
+    }
+    const passed = verifyTapResult(`${result.stdout || ''}\n${result.stderr || ''}`, baseline, suite.label);
+    console.log(`[verify] ${suite.label}: ${passed} passed`);
+  }
+}
+
 export function runVerification({
   root = ROOT,
+  testSuites = DEFAULT_TEST_SUITES,
+  testBaselines,
   steps = DEFAULT_STEPS,
   verifyTestPolicyImpl = verifyTestPolicy,
+  runTestSuitesImpl = runTestSuites,
   onStep = () => {},
 } = {}) {
   try {
     verifyTestPolicyImpl({ root });
+    runTestSuitesImpl({
+      root,
+      testSuites,
+      testBaselines: testBaselines ?? loadApprovedTestBaselines(path.join(root, 'scripts', 'test-baselines.json')),
+      onStep,
+    });
     for (const [label, command, args] of steps) {
       onStep(label);
       console.log(`\n[verify] ${label}`);

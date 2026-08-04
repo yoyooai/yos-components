@@ -7,7 +7,7 @@
     "node": ">=24.18.0 <25.0.0"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test --test-reporter=tap test/*.test.mjs",
     "verify": "node scripts/verify.mjs"
   }
 }
