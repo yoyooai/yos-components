@@ -54,6 +54,25 @@ The package gate was deliberately attacked twice:
 
 Both temporary mutations were removed before final verification.
 
+## Guard Self-Protection Follow-up
+
+The candidate now includes automated protection for the previously manual
+checks:
+
+- Root repository tests: `12/12` passed.
+- Feishu component tests: `29/29` passed.
+- Removing the runtime `chmod(DATA_DIR, 0o700)` made the permission test fail.
+- Changing the runtime mode to `0755` made the permission test fail.
+- Removing either the untracked-file check or private-path check made its
+  package-policy test fail.
+- Changing a component test to `skip` made the repository policy fail.
+- `npm run verify` passed with 0 audit vulnerabilities and the unchanged
+  27-entry package digest
+  `a23b395215882cca9f25d2e0ba717e90a34401aa9ac4e0fea810d1419536ef6f`.
+
+These are development-side results. XiaoA's independent mutation run remains
+the acceptance gate.
+
 ## Isolated Lifecycle Verification
 
 1. The real post-install hook ran in a temporary HOME with fake `yos` and
