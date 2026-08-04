@@ -1,9 +1,9 @@
 {
   "version": 1,
   "baselines": {
-    "repository": { "minimumPassed": 18 },
+    "repository": { "minimumPassed": 29 },
     "feishu": { "minimumPassed": 29 },
     "weixin": { "minimumPassed": 14 }
   },
-  "approvedDigest": "8308d36d0acc26147b327b6551e6a8b11496e452c524efab336c019aa62c841b"
+  "approvedDigest": "53cf35c56d44ba4e326158031a3d01274b4c6ebd995d48397fe6f1bbf65bfb87"
 }
