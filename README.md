@@ -6,15 +6,21 @@ component contract without adding platform-specific logic to the OS core.
 
 ## Status
 
-The repository contains one development candidate. No channel is published.
+The repository contains two independently reviewed development candidates. No
+channel is published.
 
 | Channel | Component | Version | Development | Independent acceptance | Published |
 |---|---|---:|---|---|---|
 | Feishu | `channels/001_feishu` | `0.1.0-alpha.1` | Complete | Pending | No |
+| Weixin | `channels/002_weixin` | `0.1.0-alpha.1` | Complete | Pending | No |
 
 Feishu is installable from its local package for isolated verification. It is
 not a production Registry component and must not be presented to users as a
 released channel until independent real-platform acceptance is complete.
+
+Weixin is based on Tencent's official iLink protocol implementation. Its alpha
+scope is QR login and personal text conversations; group and media support are
+not claimed until separately verified.
 
 ## Repository Boundary
 
@@ -43,8 +49,8 @@ upstream candidate
 PATH="$HOME/.nvm/versions/node/v24.18.0/bin:$PATH" npm run verify
 ```
 
-See [the Feishu verification record](开发过程/002_Test_飞书渠道自测.md) for
-the exact evidence and untested boundaries.
+See the records under [开发过程](开发过程/) for exact evidence and untested
+real-platform boundaries.
 
 ## License
 
