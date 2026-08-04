@@ -22,6 +22,12 @@ export const DEFAULT_STEPS = [
     '--registry=https://registry.npmjs.org',
   ]],
   ['Feishu package contract', process.execPath, ['scripts/verify-package.mjs']],
+  ['Weixin tests', 'npm', ['test', '--prefix', 'channels/002_weixin']],
+  ['Weixin audit', 'npm', [
+    'audit', '--prefix', 'channels/002_weixin', '--audit-level=low',
+    '--registry=https://registry.npmjs.org',
+  ]],
+  ['Weixin package contract', process.execPath, ['scripts/verify-weixin-package.mjs']],
 ];
 
 export function runTestSuites({ root, testSuites, testBaselines, onStep = () => {} }) {
