@@ -94,10 +94,13 @@ export function runVerification({
   executeTestGateImpl = executeTestGate,
   onStep = () => {},
 } = {}) {
+  let failed = false;
+  let countsVerified = false;
+  let stepsPassed = false;
   try {
     verifyTestPolicyImpl({ root });
     const approvedBaselines = testBaselines ?? loadApprovedTestBaselines(path.join(root, 'scripts', 'test-baselines.json'));
-    const countsVerified = executeTestGateImpl({
+    countsVerified = executeTestGateImpl({
       root,
       testSuites,
       testBaselines: approvedBaselines,
@@ -105,21 +108,28 @@ export function runVerification({
       runTestSuitesImpl,
       verifyRecordedTestCountsImpl,
     });
-    if (!countsVerified) {
-      throw new Error('executed-test counts were never verified');
+    if (countsVerified) {
+      stepsPassed = true;
+      for (const [label, command, args] of steps) {
+        onStep(label);
+        console.log(`\n[verify] ${label}`);
+        const result = spawnSync(command, args, { cwd: root, stdio: 'inherit' });
+        if (result.error) throw result.error;
+        if (result.status !== 0) {
+          stepsPassed = false;
+          break;
+        }
+      }
     }
-    for (const [label, command, args] of steps) {
-      onStep(label);
-      console.log(`\n[verify] ${label}`);
-      const result = spawnSync(command, args, { cwd: root, stdio: 'inherit' });
-      if (result.error) throw result.error;
-      if (result.status !== 0) return false;
-    }
-    return true;
   } catch (error) {
+    failed = true;
     console.error(`[verify] ${error.message}`);
-    return false;
   }
+  if (!failed && !countsVerified) {
+    failed = true;
+    console.error('[verify] executed-test counts were never verified');
+  }
+  return !failed && countsVerified && stepsPassed;
 }
 
 const invokedPath = process.argv[1] ? fs.realpathSync(process.argv[1]) : '';

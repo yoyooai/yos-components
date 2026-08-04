@@ -73,18 +73,18 @@ test('channel verification rejects a no-op test runner before package steps', ()
   assert.deepEqual(calls, ['policy', 'tests']);
 });
 
-test('channel verification fails when an outer wrapper swallows the executed-test failure', () => {
+test('channel verification fails when the executed-test gate throws', () => {
   const calls = [];
   assert.equal(runVerification({
     verifyTestPolicyImpl: () => calls.push('policy'),
     executeTestGateImpl: () => {
-      calls.push('swallowed-test-gate');
-      return false;
+      calls.push('throwing-test-gate');
+      throw new Error('test counts skipped');
     },
     testSuites: [],
     testBaselines: {},
     steps: [['package', process.execPath, ['-e', 'process.exit(0)']]],
     onStep: (label) => calls.push(label),
   }), false);
-  assert.deepEqual(calls, ['policy', 'swallowed-test-gate']);
+  assert.deepEqual(calls, ['policy', 'throwing-test-gate']);
 });
