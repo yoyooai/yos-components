@@ -57,7 +57,10 @@ test('Weixin metadata targets the current YOS component contract', () => {
   // which is the drift that would actually reach a user.
   const declaredVersion = skill.match(/^version: (.+)$/m)?.[1];
   assert.equal(declaredVersion, pkg.version, 'SKILL.md and package.json disagree on the version');
-  assert.match(pkg.version, /^0\.1\.0-alpha\.\d+$/, 'component is still on the 0.1.0 alpha line');
+  // The line, not the number: 0.1.x, with or without a prerelease suffix.
+  // Pinning the alpha shape blocked the intended move to a stable 0.1.0 on
+  // 2026-08-06; pinning nothing would let a stray 1.0.0 or 0.2.0 ship.
+  assert.match(pkg.version, /^0\.1\.\d+(-alpha\.\d+)?$/, 'component drifted off the 0.1.x line');
 });
 
 test('provenance locks Tencent upstream v2.4.6 exactly', () => {
