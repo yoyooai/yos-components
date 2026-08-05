@@ -1,12 +1,18 @@
 ---
 name: weixin
-version: 0.1.0-alpha.2
+version: 0.1.0-alpha.3
 description: >-
   Personal Weixin direct-message communication channel for YOS. Use for QR
   login, receiving private Weixin text messages through C4, replying to the
   originating user, and checking account or service health. Config and account
   data live under ~/yos/components/weixin. Service: pm2 yos-weixin.
 type: communication
+
+# YOS links these into ~/yos/bin on install. package.json's own bin field is not
+# read — components are installed as skill directories, so npm never links it.
+# Without this the next-steps below name a command that does not exist.
+bin:
+  yos-weixin: scripts/login.js
 
 lifecycle:
   npm: true

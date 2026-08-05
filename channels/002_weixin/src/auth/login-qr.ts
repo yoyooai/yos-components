@@ -227,7 +227,21 @@ export async function startWeixinLoginWithQr(opts: {
   }
 }
 
-const MAX_QR_REFRESH_COUNT = 3;
+/**
+ * How many times an unscanned QR code is replaced before the login gives up.
+ *
+ * A code lives about a minute. Three tries assumes the person scanning is
+ * sitting at this terminal; when the machine is remote, the code has to be
+ * relayed to whoever holds the phone, and three minutes is not enough — the
+ * login used to exit while that hand-off was still in progress. The wait is
+ * interactive and interruptible, so a generous ceiling costs nothing.
+ */
+const MAX_QR_REFRESH_COUNT = readRefreshLimit();
+
+export function readRefreshLimit(env: NodeJS.ProcessEnv = process.env): number {
+  const configured = Number(env.WEIXIN_QR_MAX_REFRESH);
+  return Number.isInteger(configured) && configured > 0 ? configured : 30;
+}
 
 /**
  * 刷新二维码并展示给用户，返回是否成功。
@@ -248,7 +262,9 @@ async function refreshQRCode(
     activeLogin.startedAt = Date.now();
     onScannedReset();
     logger.info(`waitForWeixinLogin: new QR code obtained qrcode=${redactToken(qrResponse.qrcode)}`);
-    process.stdout.write(`🔄 二维码已更新，请重新扫描。\n\n`);
+    // Say plainly that the previous link is dead. Relaying a code to someone
+    // else means an older link may already be in their hands.
+    process.stdout.write(`🔄 二维码已更新，上一个链接已失效，请使用下面这个。\n\n`);
     await displayQRCode(qrResponse.qrcode_img_content);
     return { success: true };
   } catch (refreshErr) {
