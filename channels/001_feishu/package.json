@@ -1,6 +1,6 @@
 {
   "name": "yos-feishu",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Independently installable Feishu channel for YOS",
   "type": "module",
   "main": "src/index.js",
@@ -19,7 +19,8 @@
   "scripts": {
     "start": "node src/index.js",
     "cli": "node src/cli.js",
-    "test": "node --test --test-reporter=tap test/*.test.js"
+    "test": "node --test --test-reporter=tap test/*.test.js",
+    "prepack": "node ../../scripts/verify-package.mjs"
   },
   "larkCli": {
     "version": "1.0.81"
@@ -29,13 +30,13 @@
     "core": ">=0.1.0-alpha.1 <0.2.0",
     "upstreamVersion": "0.3.4"
   },
-  "homepage": "https://github.com/Qingjingyu/YOS-Channels/tree/main/channels/001_feishu#readme",
+  "homepage": "https://github.com/yoyooai/yos-components/tree/main/channels/001_feishu#readme",
   "bugs": {
-    "url": "https://github.com/Qingjingyu/YOS-Channels/issues"
+    "url": "https://github.com/yoyooai/yos-components/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Qingjingyu/YOS-Channels.git",
+    "url": "git+https://github.com/yoyooai/yos-components.git",
     "directory": "channels/001_feishu"
   },
   "keywords": [
