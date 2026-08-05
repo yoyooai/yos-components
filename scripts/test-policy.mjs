@@ -186,33 +186,37 @@ export function verifyTestBaselineGuard(root) {
   }
 
   const verifySource = fs.readFileSync(path.join(root, 'scripts', 'verify.mjs'), 'utf8');
-  const testsIndex = /^\s*const counts = runTestSuitesImpl\(\{\s*$/m.exec(verifySource)?.index ?? -1;
-  const validatorIndex = /^\s*return verifyRecordedTestCountsImpl\(counts, testSuites, testBaselines\) === counts;\s*$/m.exec(verifySource)?.index ?? -1;
+  const gateReturnIndex = /^\s*return runTestSuitesImpl\(\{\s*$/m.exec(verifySource)?.index ?? -1;
+  const legacyVerdictIndex = /^\s*return verifyRecordedTestCountsImpl\(counts, testSuites, testBaselines\) === counts;\s*$/m.exec(verifySource)?.index ?? -1;
   const runIndex = verifySource.indexOf('export function runVerification({');
   const runSource = runIndex >= 0 ? verifySource.slice(runIndex) : '';
-  const declarationIndex = /^\s*let countsVerified = false;\s*$/m.exec(runSource)?.index ?? -1;
-  const tryIndex = /^\s*try \{\s*$/m.exec(runSource)?.index ?? -1;
-  const gateIndex = /^\s*countsVerified = executeTestGateImpl\(\{\s*$/m.exec(runSource)?.index ?? -1;
-  const catchIndex = /^\s*\} catch \(error\) \{\s*$/m.exec(runSource)?.index ?? -1;
-  const resultIndex = /^\s*if \(!failed && !countsVerified\) \{\s*$/m.exec(runSource)?.index ?? -1;
-  const stepsIndex = verifySource.indexOf('for (const [label, command, args] of steps)');
-  if (testsIndex < 0 || gateIndex < 0) {
+  const decisionStart = runSource.indexOf('let failed = false;');
+  const decisionSource = decisionStart >= 0 ? runSource.slice(decisionStart) : runSource;
+  const declarationIndex = /^\s*let counts = null;\s*$/m.exec(decisionSource)?.index ?? -1;
+  const tryIndex = /^\s*try \{\s*$/m.exec(decisionSource)?.index ?? -1;
+  const gateIndex = /^\s*counts = executeTestGateImpl\(\{\s*$/m.exec(decisionSource)?.index ?? -1;
+  const catchIndex = /^\s*\} catch \(error\) \{\s*$/m.exec(decisionSource)?.index ?? -1;
+  const validatorIndex = /^\s*verifyRecordedTestCountsImpl\(counts, testSuites, approvedBaselines\);\s*$/m.exec(decisionSource)?.index ?? -1;
+  const stepsIndex = decisionSource.indexOf('for (const [label, command, args] of steps)');
+  if (legacyVerdictIndex >= 0) {
+    throw new Error('executed-test gate must return raw counts');
+  }
+  if (gateReturnIndex < 0 || gateIndex < 0) {
     throw new Error('executed-test gate is missing from channel verification');
   }
   if (validatorIndex < 0) {
     throw new Error('executed-test count validator is missing from channel verification');
   }
-  if (resultIndex < 0) {
-    throw new Error('executed-test verification result is not enforced');
-  }
-  if (declarationIndex < 0 || tryIndex < 0 || declarationIndex > tryIndex) {
+  if (tryIndex < 0 || declarationIndex < 0 || declarationIndex > tryIndex) {
     throw new Error('executed-test verification state must be declared before the verification try block');
   }
-  if (catchIndex < 0 || resultIndex < catchIndex) {
-    throw new Error('executed-test verification result must be enforced after the verification catch block');
+  if (catchIndex < 0 || validatorIndex < catchIndex) {
+    throw new Error('executed-test count validator must be enforced after the verification catch block');
   }
-  if (stepsIndex < 0 || testsIndex > validatorIndex
-    || gateIndex < tryIndex || gateIndex > catchIndex) {
+  if (stepsIndex < 0 || gateIndex < tryIndex || gateIndex > catchIndex) {
+    throw new Error('executed-test gate must run before audits and packaging');
+  }
+  if (validatorIndex > stepsIndex) {
     throw new Error('executed-test gate must run before audits and packaging');
   }
 }

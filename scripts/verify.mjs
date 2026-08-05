@@ -72,15 +72,13 @@ export function executeTestGate({
   testBaselines,
   onStep,
   runTestSuitesImpl,
-  verifyRecordedTestCountsImpl,
 }) {
-  const counts = runTestSuitesImpl({
+  return runTestSuitesImpl({
     root,
     testSuites,
     testBaselines,
     onStep,
   });
-  return verifyRecordedTestCountsImpl(counts, testSuites, testBaselines) === counts;
 }
 
 export function runVerification({
@@ -95,20 +93,35 @@ export function runVerification({
   onStep = () => {},
 } = {}) {
   let failed = false;
-  let countsVerified = false;
+  let approvedBaselines = null;
+  let counts = null;
   let stepsPassed = false;
   try {
     verifyTestPolicyImpl({ root });
-    const approvedBaselines = testBaselines ?? loadApprovedTestBaselines(path.join(root, 'scripts', 'test-baselines.json'));
-    countsVerified = executeTestGateImpl({
+    approvedBaselines = testBaselines ?? loadApprovedTestBaselines(path.join(root, 'scripts', 'test-baselines.json'));
+    counts = executeTestGateImpl({
       root,
       testSuites,
       testBaselines: approvedBaselines,
       onStep,
       runTestSuitesImpl,
-      verifyRecordedTestCountsImpl,
     });
-    if (countsVerified) {
+  } catch (error) {
+    failed = true;
+    console.error(`[verify] ${error.message}`);
+  }
+
+  if (!failed) {
+    try {
+      verifyRecordedTestCountsImpl(counts, testSuites, approvedBaselines);
+    } catch (error) {
+      failed = true;
+      console.error(`[verify] ${error.message}`);
+    }
+  }
+
+  if (!failed) {
+    try {
       stepsPassed = true;
       for (const [label, command, args] of steps) {
         onStep(label);
@@ -120,16 +133,13 @@ export function runVerification({
           break;
         }
       }
+    } catch (error) {
+      failed = true;
+      stepsPassed = false;
+      console.error(`[verify] ${error.message}`);
     }
-  } catch (error) {
-    failed = true;
-    console.error(`[verify] ${error.message}`);
   }
-  if (!failed && !countsVerified) {
-    failed = true;
-    console.error('[verify] executed-test counts were never verified');
-  }
-  return !failed && countsVerified && stepsPassed;
+  return !failed && stepsPassed;
 }
 
 const invokedPath = process.argv[1] ? fs.realpathSync(process.argv[1]) : '';

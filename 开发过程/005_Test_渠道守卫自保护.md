@@ -85,3 +85,17 @@
   06a6cd097a91884abdeb9d924b37dc3014be62780d5f0f3d135803a5c9900f9c。
 
 以上仍为开发侧证据，不替代小A独立复验。
+
+## executed-test 只交回数据
+
+2026-08-05 按同一门禁原则把渠道仓的执行门禁收口成“只交回数据，不交回结论”：
+
+- `executeTestGate` 只返回根仓、飞书、微信各自的原始执行计数。
+- `runVerification` 在主验证 `try/catch` 外统一调用 `verifyRecordedTestCountsImpl(counts, testSuites, approvedBaselines)`，之后才允许进入包校验与审计步骤。
+- `undefined`、`true`、空值、错误对象或 warning-only 包装后的伪成功都在打包前失败。
+- 静态守卫同步要求原始计数返回、外层 validator、状态声明和执行顺序都不能被移除或移回 `try/catch` 内。
+- 后续审计或包校验命令启动失败时，验证器返回失败并保留受控错误信息，不再抛出 Node 裸调用栈。
+- 根仓批准底线同步提升为当前实测的 `32/32`。此后每次净新增测试都必须同步提高批准底线并更新摘要，不能让新增护栏落在旧底线之外。
+
+开发侧最终复跑：`test/verify-test-policy-wiring.test.mjs` 与 `test/test-policy.test.mjs` 共 `13/13` 通过。
+这仍属于开发侧证据，不替代小A独立复验。
