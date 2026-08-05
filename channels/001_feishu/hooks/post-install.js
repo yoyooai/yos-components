@@ -142,6 +142,16 @@ if (isInteractive) {
 }
 
 // 5. lark-cli integration (idempotent — safe to re-run on reinstall)
+//
+// lark-cli is an add-on: it powers the Feishu productivity surfaces (documents,
+// sheets, Base, calendar, tasks, mail, drive, wiki). Messaging — the channel
+// itself — does not need it. It is also the part most likely to fail on a
+// customer machine: it installs globally with npm and reaches GitHub for its
+// own assets.
+//
+// Exiting here used to abandon the rest of this hook, so a failure in the
+// optional add-on cost the user the setup steps printed below — the ones they
+// actually have to follow. Degrade, name what is unavailable, and carry on.
 requireMinCoreVersion();
 console.log('\nIntegrating lark-cli...');
 try {
@@ -149,8 +159,12 @@ try {
   installLarkCliSkills(SKILL_DIR);
   syncCredentialsToLarkCli();
 } catch (err) {
-  console.error('lark-cli integration failed:', err.message);
-  process.exit(1);
+  console.error('\n  lark-cli could not be installed:', err.message);
+  console.error('  The Feishu channel itself is unaffected — messages will send and receive.');
+  console.error('  Unavailable until it is installed: documents, sheets, Base, calendar,');
+  console.error('  tasks, mail, drive and wiki operations.');
+  console.error('  To retry later, once npm can install globally on this machine:');
+  console.error('    yos upgrade feishu');
 }
 
 // Note: PM2 service is started by Claude after this hook completes.
