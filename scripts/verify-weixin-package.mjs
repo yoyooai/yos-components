@@ -10,7 +10,7 @@ const COMPONENT = path.join(ROOT, COMPONENT_RELATIVE);
 const REQUIRED_FILES = [
   'CHANGELOG.md', 'LICENSE', 'README.md', 'SKILL.md',
   'THIRD_PARTY_NOTICES.md', 'ecosystem.config.cjs', 'hooks/post-install.js',
-  'package.json', 'provenance/upstream.json', 'scripts/login.ts',
+  'package.json', 'provenance/upstream.json', 'scripts/login.js', 'scripts/login.ts',
   'scripts/send.js', 'scripts/send.ts', 'src/index.ts',
 ];
 const FORBIDDEN_PATHS = [

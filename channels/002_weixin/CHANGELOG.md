@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.0-alpha.3 - 2026-08-05
+
+- Declare `yos-weixin` under `bin` in SKILL.md, and ship a `scripts/login.js`
+  entry for it. YOS links commands from SKILL.md, never from package.json's own
+  `bin` — components install as skill directories, so npm never links that one.
+  The post-install note has been telling users to run a command that did not
+  exist; on a real install it was "command not found", with no way forward.
+- Keep replacing an unscanned QR code for far longer (30 tries, or
+  `WEIXIN_QR_MAX_REFRESH`). Three assumed the person scanning was sitting at this
+  terminal; when the server is remote the code has to be relayed to whoever holds
+  the phone, and the login used to exit mid-hand-off. A replacement now also says
+  the previous link is dead, since the relayed one may still be in someone's hand.
+
+A real-person QR login has been completed against 0.1.0-alpha.2 and messages were
+delivered, so this channel is no longer unproven — but it has not run for a full
+day, and login had to be started by hand because of the missing command above.
+
 ## 0.1.0-alpha.2 - 2026-08-05
 
 - Point the repository metadata at `yoyooai/yos-components`, its actual home.
