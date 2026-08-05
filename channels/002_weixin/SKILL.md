@@ -1,6 +1,6 @@
 ---
 name: weixin
-version: 0.1.0-alpha.1
+version: 0.1.0-alpha.2
 description: >-
   Personal Weixin direct-message communication channel for YOS. Use for QR
   login, receiving private Weixin text messages through C4, replying to the

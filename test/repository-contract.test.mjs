@@ -40,7 +40,6 @@ test('the first channel has the required standalone component files', () => {
 test('component metadata is independently versioned for the current YOS contract', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.equal(pkg.name, 'yos-feishu');
-  assert.equal(pkg.version, '0.1.0-alpha.1');
   assert.equal(pkg.engines.node, '>=24.18.0 <25.0.0');
   assert.deepEqual(pkg.yos, {
     id: 'channel.feishu',
@@ -50,9 +49,16 @@ test('component metadata is independently versioned for the current YOS contract
 
   const skill = read('SKILL.md');
   assert.match(skill, /^name: feishu$/m);
-  assert.match(skill, /^version: 0\.1\.0-alpha\.1$/m);
   assert.match(skill, /name: yos-feishu/);
   assert.match(skill, /~\/yos\/components\/feishu/);
+
+  // The component declares its version twice. Pinning a literal here only
+  // proves someone remembered to edit the test on release day; requiring the
+  // two to agree catches the failure that actually ships — a component whose
+  // manifest and package disagree about which version it is.
+  const declaredVersion = skill.match(/^version: (.+)$/m)?.[1];
+  assert.equal(declaredVersion, pkg.version, 'SKILL.md and package.json disagree on the version');
+  assert.match(pkg.version, /^0\.1\.0-alpha\.\d+$/, 'component is still on the 0.1.0 alpha line');
 });
 
 test('provenance locks the exact imported source and archive', () => {

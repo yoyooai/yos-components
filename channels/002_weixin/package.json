@@ -1,25 +1,11 @@
 {
   "name": "yos-weixin",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Independently installable personal Weixin channel for YOS",
   "type": "module",
   "main": "src/index.ts",
-  "files": [
-    "src/",
-    "hooks/",
-    "scripts/",
-    "SKILL.md",
-    "ecosystem.config.cjs",
-    "README.md",
-    "CHANGELOG.md",
-    "LICENSE",
-    "THIRD_PARTY_NOTICES.md",
-    "UPSTREAM_CHANGELOG.zh_CN.md",
-    "provenance/upstream.json"
-  ],
-  "bin": {
-    "yos-weixin": "scripts/login.ts"
-  },
+  "files": ["src/", "hooks/", "scripts/", "SKILL.md", "ecosystem.config.cjs", "README.md", "CHANGELOG.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "UPSTREAM_CHANGELOG.zh_CN.md", "provenance/upstream.json"],
+  "bin": { "yos-weixin": "scripts/login.ts" },
   "scripts": {
     "start": "node src/index.ts",
     "login": "node scripts/login.ts login",
@@ -32,23 +18,16 @@
     "upstreamVersion": "2.4.6"
   },
   "ilink_appid": "bot",
-  "homepage": "https://github.com/Qingjingyu/YOS-Channels/tree/main/channels/002_weixin#readme",
+  "homepage": "https://github.com/yoyooai/yos-components/tree/main/channels/002_weixin#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Qingjingyu/YOS-Channels.git",
+    "url": "git+https://github.com/yoyooai/yos-components.git",
     "directory": "channels/002_weixin"
   },
-  "keywords": [
-    "yos",
-    "weixin",
-    "wechat",
-    "channel"
-  ],
+  "keywords": ["yos", "weixin", "wechat", "channel"],
   "author": "Qingjingyu",
   "license": "MIT",
-  "engines": {
-    "node": ">=24.18.0 <25.0.0"
-  },
+  "engines": { "node": ">=24.18.0 <25.0.0" },
   "dependencies": {
     "qrcode-terminal": "0.12.0"
   }

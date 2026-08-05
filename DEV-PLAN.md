@@ -2,7 +2,7 @@
 
 ## Technical Baseline
 
-- Repository: `Qingjingyu/YOS-Channels`
+- Repository: `yoyooai/yos-components`
 - Component: `channels/001_feishu`
 - YOS contract: `0.1.0-alpha.1`
 - Node contract: `>=24.18.0 <25.0.0`
