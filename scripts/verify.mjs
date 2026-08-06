@@ -48,7 +48,7 @@ export function runTestSuites({ root, testSuites, testBaselines, onStep = () => 
       if (result.error) throw result.error;
       throw new Error(`${suite.label} exited with status ${result.status}`);
     }
-    const passed = verifyTapResult(`${result.stdout || ''}\n${result.stderr || ''}`, baseline, suite.label);
+    const passed = verifyTapResult(`${result.stdout || ''}\n${result.stderr || ''}`, baseline, suite.label, suite.id);
     counts[suite.id] = passed;
     console.log(`[verify] ${suite.label}: ${passed} passed`);
   }

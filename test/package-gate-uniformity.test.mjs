@@ -50,6 +50,50 @@ describe('every component is packaged under the same gate', () => {
     }
   });
 
+
+  // ── What may hang on the pack lifecycle (TD-79,口径 settled 2026-08-06) ──
+  //
+  // The two repositories looked like they contradicted each other: the OS repo
+  // forbids `prepack` outright, this one requires it. Reading both reasons, they
+  // are not in conflict — they are the same rule applied to different facts:
+  //
+  //   The release gate never hangs on the pack lifecycle. A pack-lifecycle hook
+  //   may only run a check that is cheap, self-contained, and also covered by
+  //   verify — never the sole gate.
+  //
+  // The OS repo packs *itself* at runtime (self-upgrade builds a candidate with
+  // `npm pack`), so a heavy prepack there would fire in the middle of a customer
+  // upgrade; it uses prepublishOnly instead. Components are never npm-packed for
+  // distribution (the mirror serves them from source), so a light contract check
+  // on pack costs nothing and catches a hand-run `npm pack`.
+  //
+  // These assertions keep this repo's half of that rule honest: the hook stays
+  // cheap, and it is never the only thing checking the package.
+
+  it('the pack hook stays cheap — it must not pull in the full verify', () => {
+    for (const name of componentDirs()) {
+      const prepack = componentPackageJson(name).scripts?.prepack ?? '';
+      assert.doesNotMatch(prepack, /verify\.mjs/, `${name} prepack must not run the repository verify`);
+      assert.doesNotMatch(prepack, /npm run verify/, `${name} prepack must not run the repository verify`);
+    }
+  });
+
+  it('⭐ the pack hook is never the only check — verify covers the same contract', () => {
+    // If this ever fails, the prepack hook has become the sole gate, and
+    // `npm pack --ignore-scripts` (a documented flag) would walk straight past
+    // it. That is the failure TD-79 was actually pointing at.
+    for (const name of componentDirs()) {
+      const contract = contractFor(name);
+      assert.ok(contract, `${name} has no contract wired into verify.mjs`);
+      const prepack = componentPackageJson(name).scripts?.prepack ?? '';
+      assert.ok(
+        prepack.includes(contract),
+        `${name}: prepack (${prepack}) and verify (${contract}) must run the same contract, `
+        + 'so skipping the hook loses nothing',
+      );
+    }
+  });
+
   it('every component runs its own contract on pack, none is left without one', () => {
     // Second line of defence for the ordinary `npm pack` path. It does not
     // replace the verify run above — `npm pack --ignore-scripts` skips prepack
