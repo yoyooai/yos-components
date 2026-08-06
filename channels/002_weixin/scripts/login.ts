@@ -11,7 +11,7 @@ import {
   saveWeixinAccount,
   unregisterWeixinAccountId,
 } from '../src/auth/accounts.ts';
-import { displayQRCode, startWeixinLoginWithQr, waitForWeixinLogin } from '../src/auth/login-qr.ts';
+import { displayQRCode, startWeixinLoginWithQr, waitForWeixinLogin, readLoginTimeoutMs } from '../src/auth/login-qr.ts';
 
 function restartService(): void {
   spawnSync('pm2', ['restart', 'yos-weixin'], { stdio: 'ignore' });
@@ -25,7 +25,7 @@ async function login(): Promise<void> {
   const result = await waitForWeixinLogin({
     sessionKey: started.sessionKey,
     apiBaseUrl: DEFAULT_BASE_URL,
-    timeoutMs: 8 * 60_000,
+    timeoutMs: readLoginTimeoutMs(),   // 单一出处见 login-qr.ts；不许在这里写字面量
   });
   if (result.alreadyConnected) {
     process.stdout.write(`${result.message}\n`);

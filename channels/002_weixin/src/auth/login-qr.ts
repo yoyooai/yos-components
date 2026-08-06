@@ -244,6 +244,37 @@ export function readRefreshLimit(env: NodeJS.ProcessEnv = process.env): number {
 }
 
 /**
+ * 登录**总时限**（分钟）。2026-08-06 从 8 分钟放宽到 30 分钟。
+ *
+ * 为什么 8 分钟不够：刷新次数放宽到 30 次之后，真正卡人的变成了这个总时限。
+ * 一次远程交接的实际链路是「装机的人取到链接 → 发给扫码的人 → 对方切到微信 →
+ * 点开确认」，中间还常常要来回问一句。8 分钟是按"扫码的人就坐在这台机器前"
+ * 定的数，而真实场景恰恰相反 —— 机器在云上，扫码的人在别处。
+ *
+ * 放宽的代价是零：这个等待是交互式的，人随时 Ctrl-C 就停；到点退出保护的
+ * 不是机器而是终端别挂着，30 分钟同样满足。
+ *
+ * 单一出处：`waitForWeixinLogin` 的默认值和 `scripts/login.ts` 都从这里取，
+ * 不许任何一处再写字面量 —— 两处各写一个数，迟早对不上。
+ */
+export function readLoginTimeoutMinutes(env: NodeJS.ProcessEnv = process.env): number {
+  const configured = Number(env.WEIXIN_LOGIN_TIMEOUT_MINUTES);
+  return Number.isInteger(configured) && configured > 0 ? configured : 30;
+}
+
+export function readLoginTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
+  return readLoginTimeoutMinutes(env) * 60_000;
+}
+
+/** 把剩余时间说成人话。闷着等到超时，人不知道还该不该等。 */
+export function describeRemaining(remainingMs: number): string {
+  const totalSec = Math.max(0, Math.round(remainingMs / 1000));
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return min > 0 ? `${min} 分 ${sec} 秒` : `${sec} 秒`;
+}
+
+/**
  * 刷新二维码并展示给用户，返回是否成功。
  * 成功时更新 activeLogin 的 qrcode/qrcodeUrl/startedAt，并重置 scannedPrinted。
  */
@@ -252,8 +283,11 @@ async function refreshQRCode(
   botType: string,
   qrRefreshCount: number,
   onScannedReset: () => void,
+  remainingMs?: number,
 ): Promise<{ success: true } | { success: false; message: string }> {
-  process.stdout.write(`\n⏳ 正在刷新二维码...(${qrRefreshCount}/${MAX_QR_REFRESH_COUNT})\n`);
+  // 把"还剩多久"一并说出来。原来只报第几次刷新，人不知道自己还有没有时间去叫人扫。
+  const remainText = remainingMs === undefined ? "" : `，本次登录还剩 ${describeRemaining(remainingMs)}`;
+  process.stdout.write(`\n⏳ 正在刷新二维码...(${qrRefreshCount}/${MAX_QR_REFRESH_COUNT}${remainText})\n`);
   logger.info(`waitForWeixinLogin: refreshing QR code (${qrRefreshCount}/${MAX_QR_REFRESH_COUNT})`);
   try {
     const qrResponse = await fetchQRCode(FIXED_BASE_URL, botType);
@@ -299,7 +333,7 @@ export async function waitForWeixinLogin(opts: {
     };
   }
 
-  const timeoutMs = Math.max(opts.timeoutMs ?? 480_000, 1000);
+  const timeoutMs = Math.max(opts.timeoutMs ?? readLoginTimeoutMs(), 1000);
   const deadline = Date.now() + timeoutMs;
   let scannedPrinted = false;
   let qrRefreshCount = 1;
@@ -362,6 +396,7 @@ export async function waitForWeixinLogin(opts: {
             opts.botType || DEFAULT_ILINK_BOT_TYPE,
             qrRefreshCount,
             () => { scannedPrinted = false; },
+            deadline - Date.now(),
           );
           if (!expiredRefreshResult.success) {
             activeLogins.delete(opts.sessionKey);
@@ -394,6 +429,7 @@ export async function waitForWeixinLogin(opts: {
             opts.botType || DEFAULT_ILINK_BOT_TYPE,
             qrRefreshCount,
             () => { scannedPrinted = false; },
+            deadline - Date.now(),
           );
           if (!blockedRefreshResult.success) {
             activeLogins.delete(opts.sessionKey);
