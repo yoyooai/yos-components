@@ -1,6 +1,6 @@
 {
   "name": "yos-weixin",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Independently installable personal Weixin channel for YOS",
   "type": "module",
   "main": "src/index.ts",
@@ -47,7 +47,7 @@
   "author": "Qingjingyu",
   "license": "MIT",
   "engines": {
-    "node": ">=24.18.0 <25.0.0"
+    "node": ">=22.18.0"
   },
   "dependencies": {
     "qrcode-terminal": "0.12.0"
