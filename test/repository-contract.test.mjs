@@ -40,7 +40,7 @@ test('the first channel has the required standalone component files', () => {
 test('component metadata is independently versioned for the current YOS contract', () => {
   const pkg = JSON.parse(read('package.json'));
   assert.equal(pkg.name, 'yos-feishu');
-  assert.equal(pkg.engines.node, '>=24.18.0 <25.0.0');
+  assert.equal(pkg.engines.node, '>=20.20.0');
   assert.deepEqual(pkg.yos, {
     id: 'channel.feishu',
     core: '>=0.1.0-alpha.1 <0.2.0',
