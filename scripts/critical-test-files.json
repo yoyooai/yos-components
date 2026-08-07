@@ -42,6 +42,14 @@
       "minimumTests": 1
     },
     {
+      "path": "channels/001_feishu/test/entrypoints-boot.test.js",
+      "minimumTests": 2
+    },
+    {
+      "path": "channels/002_weixin/test/entrypoints-boot.test.ts",
+      "minimumTests": 2
+    },
+    {
       "path": "scripts/test-policy.mjs"
     },
     {
