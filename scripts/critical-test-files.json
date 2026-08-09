@@ -75,7 +75,7 @@
     },
     {
       "path": "test/progress-log.test.mjs",
-      "minimumTests": 18
+      "minimumTests": 19
     },
     {
       "path": "scripts/progress-log.mjs"

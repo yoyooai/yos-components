@@ -136,6 +136,11 @@ test('orders prereleases below the release they lead to', () => {
   assert.equal(compareVersions('0.1.2', '0.1.2'), 0);
 });
 
+test('preserves hyphens inside prerelease identifiers when ordering versions', () => {
+  assert.ok(compareVersions('0.1.0-alpha-2', '0.1.0-alpha-1') > 0);
+  assert.ok(compareVersions('0.1.0-beta-1', '0.1.0-beta-2') < 0);
+});
+
 test('a component directory reduces to the name customers type', () => {
   assert.equal(componentNameFromDirectory('001_feishu'), 'feishu');
   assert.equal(componentNameFromDirectory('002_weixin'), 'weixin');

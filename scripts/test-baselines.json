@@ -2,7 +2,7 @@
   "version": 1,
   "baselines": {
     "repository": {
-      "minimumPassed": 68
+      "minimumPassed": 69
     },
     "feishu": {
       "minimumPassed": 74
@@ -11,5 +11,5 @@
       "minimumPassed": 30
     }
   },
-  "approvedDigest": "4b4a5868c629721a6476e61bedf9ad938e5144f129d47641f48e17cf2f434f3b"
+  "approvedDigest": "7d92569c4c8a5b1b631afcc752991ad97a0ba659ecd6c90a0278a1ffb7350bde"
 }
