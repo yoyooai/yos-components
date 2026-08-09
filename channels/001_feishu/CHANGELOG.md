@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.3 - 2026-08-09
+
+- Stop asking during an install that promised not to ask. `yos add feishu -y`
+  could sit on `Choose mode [1/2]` forever: this hook decided whether to prompt
+  from `process.stdin.isTTY` alone, so the `--yes` the customer passed was
+  honoured by the CLI and then ignored here, on the same terminal. The core now
+  passes `YOS_ASSUME_YES` and `mayAskInteractively()` respects it.
+- Answer npx before naming the package. `npx xc-skills@latest ... -y` put `-y`
+  after the package name, making it an argument for xc-skills while npx kept
+  its own `Ok to proceed?` question — the last thing standing between an
+  unattended install and finishing.
+- Say which connection mode a non-interactive install picked, and where to
+  change it. Choosing in silence left an unattended machine on a mode nobody
+  selected and nobody was told about.
+- Make a split brain diagnosable. Feishu delivers each event to exactly one
+  long connection, so the same App ID on two machines produces one bot that
+  contradicts itself while both logs look normal read on their own. The
+  platform does not tell a client how many connections an app has, so this
+  cannot be detected here and does not pretend to be: instead startup names
+  this instance (host, pid, App ID fingerprint) and states the trap, and every
+  handled message is stamped with the machine that handled it.
+
 ## 0.1.2 - 2026-08-09
 
 - Keep Feishu SDK warnings out of `error.log`. Every SDK object is now built
