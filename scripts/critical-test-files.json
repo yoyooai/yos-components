@@ -72,6 +72,16 @@
     },
     {
       "path": "channels/002_weixin/provenance/upstream.json"
+    },
+    {
+      "path": "test/progress-log.test.mjs",
+      "minimumTests": 18
+    },
+    {
+      "path": "scripts/progress-log.mjs"
+    },
+    {
+      "path": "docs/progress.md"
     }
   ]
 }
