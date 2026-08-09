@@ -63,6 +63,11 @@ function tagExists(root, tag) {
   return result.status === 0;
 }
 
+function hasVisibleTags(root) {
+  const tags = run('git', ['tag', '--list'], { cwd: root });
+  return tags.split('\n').some((tag) => tag.trim().length > 0);
+}
+
 function releasedDigest(root, tag, relative) {
   const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'yos-released-component-'));
   try {
@@ -78,6 +83,9 @@ function releasedDigest(root, tag, relative) {
 }
 
 export function verifyReleasedVersionImmutability({ root = ROOT } = {}) {
+  if (!hasVisibleTags(root)) {
+    throw new Error('no published tags are visible; fetch tags before running release verification');
+  }
   const checked = [];
   for (const component of discoverComponents(root)) {
     const tag = `${component.registryName}-v${component.version}`;

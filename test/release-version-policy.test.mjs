@@ -63,3 +63,16 @@ test('allows changed package content after the component version is advanced', (
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('fails closed when no published tags are visible', () => {
+  const { root } = fixtureRepo();
+  try {
+    runGit(root, ['tag', '--delete', 'example-v0.1.0']);
+    assert.throws(
+      () => verify(root),
+      /no published tags are visible|fetch tags/i,
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
