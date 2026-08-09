@@ -23,6 +23,8 @@ import { downloadImage, downloadFile, sendMessage, replyToMessage, extractPermis
 import { getUserInfo } from './lib/contact.js';
 import { listChatMembers } from './lib/chat.js';
 import { sendThreadAware } from './lib/reply-send.js';
+import { resolveDisplayName, createFallbackNotice } from './lib/name-resolution.js';
+import { createWsClient, createEventDispatcher, createApiClient } from './lib/lark-sdk.js';
 
 // C4 receive interface path
 const C4_RECEIVE = path.join(process.env.HOME, 'yos/.claude/skills/comm-bridge/scripts/c4-receive.js');
@@ -288,6 +290,17 @@ function handlePermissionError(permErr) {
   }
 }
 
+// Rate limiter for the "no display name available" notice. The notice itself is
+// emitted inside resolveDisplayName(), so the fallback id and the explanation
+// for it can never come apart — see lib/name-resolution.js.
+// It is NOT sent to stderr: nothing is broken, the channel keeps working with
+// the raw id — but staying completely silent is what made "why is my name a
+// string of ou_… characters" unanswerable.
+const nameFallbackSink = {
+  notice: createFallbackNotice(),
+  emit: (line) => console.log(line),
+};
+
 // ============================================================
 // User name cache with TTL (in-memory primary, file for cold start)
 // ============================================================
@@ -525,15 +538,19 @@ async function resolveUserName(userId, openId) {
 
   try {
     const result = await getUserInfo(id);
-    if (result.success && result.user?.name) {
-      userCacheMemory.set(id, { name: result.user.name, expireAt: now + SENDER_NAME_TTL });
+    // Resolving and announcing are one call: there is no way to reach the raw-id
+    // fallback without the log line that explains it (TD-128).
+    const { name, resolved, verdict } = resolveDisplayName(result, id, nameFallbackSink);
+    if (resolved) {
+      userCacheMemory.set(id, { name, expireAt: now + SENDER_NAME_TTL });
       _userCacheDirty = true;
-      return result.user.name;
+      return name;
     }
-    // Check for permission error in the result
-    if (!result.success && result.code === 99991672) {
-      handlePermissionError({ code: result.code, message: result.message || '' });
+    // The explicit permission code also notifies the owner, with the grant URL.
+    if (verdict.outcome === 'permission-denied') {
+      handlePermissionError({ code: verdict.permissionCode, message: result.message || '' });
     }
+    return name;
   } catch (err) {
     // Check if this is a permission error
     const permErr = extractPermissionError(err);
@@ -544,8 +561,9 @@ async function resolveUserName(userId, openId) {
     }
     // If we have an expired cached name, return it as fallback
     if (cached) return cached.name;
+    // Same rule on the throw path: the raw id never leaves here unannounced.
+    return resolveDisplayName({ success: false, message: err.message }, id, nameFallbackSink).name;
   }
-  return id;
 }
 
 // Decrypt message if encrypt_key is set (webhook mode only)
@@ -1376,18 +1394,21 @@ async function handleMessage(data) {
 // ============================================================
 
 function startWebSocket(creds) {
-  wsClient = new Lark.WSClient({
+  // Built through lib/lark-sdk.js so the SDK logger cannot be forgotten:
+  // its warnings (e.g. "no im.message.reaction.created_v1 handle" for events we
+  // never subscribed to) are not errors, and a red-looking error.log makes
+  // customers think the channel is down.
+  wsClient = createWsClient({
     appId: creds.app_id,
     appSecret: creds.app_secret,
     domain: Lark.Domain.Feishu,
-    loggerLevel: Lark.LoggerLevel.info,
     autoReconnect: true
   });
 
   console.log('[feishu] Connecting to Feishu via WebSocket...');
 
   wsClient.start({
-    eventDispatcher: new Lark.EventDispatcher({}).register({
+    eventDispatcher: createEventDispatcher().register({
       'im.message.receive_v1': async (data) => {
         try {
           await handleMessage(data);
@@ -1582,7 +1603,7 @@ if (!creds.app_id || !creds.app_secret) {
 // Fetch bot identity, then start the selected transport
 (async () => {
   try {
-    const client = new Lark.Client({
+    const client = createApiClient({
       appId: creds.app_id,
       appSecret: creds.app_secret,
       appType: Lark.AppType.SelfBuild,
