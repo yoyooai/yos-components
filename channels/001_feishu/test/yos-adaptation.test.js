@@ -26,6 +26,27 @@ test('C4 delivery carries the original Feishu message ID as the idempotency key'
   assert.match(source, /processedMessages\.delete\(messageId\)/);
 });
 
+test('merge-forward content is fetched only after YOS access checks pass', () => {
+  const source = fs.readFileSync(path.join(ROOT, 'src', 'index.js'), 'utf8');
+  const handlerStart = source.indexOf('async function handleMessage(data)');
+  const handlerEnd = source.indexOf('// Initialize bot identity', handlerStart);
+  const handler = source.slice(handlerStart, handlerEnd === -1 ? undefined : handlerEnd);
+
+  assert.match(source, /import \{ extractInteractiveText \} from '\.\/lib\/card-text\.js';/);
+  assert.match(source, /import \{ renderMergeForward, itemsFromResponse \} from '\.\/lib\/merge-forward\.js';/);
+  assert.match(handler, /const extracted = extractMessageContent\(message\);/);
+
+  const privateStart = handler.indexOf("if (chatType === 'p2p')");
+  const groupStart = handler.indexOf("if (chatType === 'group')");
+  const privateBlock = handler.slice(privateStart, groupStart);
+  const groupBlock = handler.slice(groupStart);
+
+  assert.ok(privateBlock.indexOf('await bindOwner(') < privateBlock.indexOf('if (!isDmAllowed('));
+  assert.ok(privateBlock.indexOf('if (!isDmAllowed(') < privateBlock.indexOf('resolveMergeForwardText(extracted)'));
+  assert.ok(groupBlock.indexOf('if (!allowedGroup') < groupBlock.indexOf('resolveMergeForwardText(extracted)'));
+  assert.ok(groupBlock.indexOf('if (!isSenderAllowedInGroup(') < groupBlock.indexOf('resolveMergeForwardText(extracted)'));
+});
+
 test('saved configuration is private to the YOS account', async () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'yos-feishu-config-'));
   const dataDir = path.join(home, 'yos', 'components', 'feishu');

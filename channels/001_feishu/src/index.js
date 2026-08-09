@@ -26,6 +26,8 @@ import { sendThreadAware } from './lib/reply-send.js';
 import { resolveDisplayName, createFallbackNotice } from './lib/name-resolution.js';
 import { createWsClient, createEventDispatcher, createApiClient } from './lib/lark-sdk.js';
 import { describeInstance, duplicateConnectionNotice } from './lib/instance-identity.js';
+import { extractInteractiveText } from './lib/card-text.js';
+import { renderMergeForward, itemsFromResponse } from './lib/merge-forward.js';
 
 // C4 receive interface path
 const C4_RECEIVE = path.join(process.env.HOME, 'yos/.claude/skills/comm-bridge/scripts/c4-receive.js');
@@ -842,6 +844,53 @@ function buildEndpoint(chatId, { chatType, rootId, parentId, messageId, threadId
   return endpoint;
 }
 
+// Request open_id identities because that is the namespace used by inbound
+// events and the local name cache. Request original card content so Schema 2.0
+// markdown is not lost in Feishu's transformed read-back shape.
+const MESSAGE_GET_PARAMS = {
+  user_id_type: 'open_id',
+  card_msg_content_type: 'user_card_content',
+};
+
+function parseMessageItemText(msg, fallbackMessageId) {
+  const messageId = msg.message_id || fallbackMessageId;
+  let content;
+  try {
+    content = JSON.parse(msg.body?.content || '{}');
+  } catch {
+    content = {};
+  }
+
+  let text;
+  if (msg.msg_type === 'text') {
+    text = content.text || '';
+  } else if (msg.msg_type === 'post') {
+    ({ text } = extractPostText(content.content || [], messageId));
+    if (content.title) text = `[${content.title}] ${text}`;
+  } else if (msg.msg_type === 'interactive') {
+    text = extractInteractiveText(content);
+  } else if (msg.msg_type === 'file') {
+    text = `[file: ${content.file_name || 'unknown'}, file_key: ${content.file_key}, msg_id: ${messageId}]`;
+  } else if (msg.msg_type === 'image') {
+    text = `[image, image_key: ${content.image_key}, msg_id: ${messageId}]`;
+  } else if (msg.msg_type === 'audio') {
+    text = `[audio, file_key: ${content.file_key}, msg_id: ${messageId}]`;
+  } else if (msg.msg_type === 'media') {
+    text = `[media: ${content.file_name || 'video'}, file_key: ${content.file_key}, msg_id: ${messageId}]`;
+  } else if (msg.msg_type === 'sticker') {
+    text = `[sticker, file_key: ${content.file_key || 'unknown'}]`;
+  } else if (msg.msg_type === 'merge_forward') {
+    text = '[nested merge_forward message]';
+  } else {
+    text = `[${msg.msg_type} message]`;
+  }
+
+  if (msg.mentions?.length > 0) {
+    text = resolveMentions(text, msg.mentions);
+  }
+  return text;
+}
+
 /**
  * Fetch content of a quoted/replied message (best-effort).
  * Returns { sender, text } with resolved sender name.
@@ -852,30 +901,48 @@ async function fetchQuotedMessage(messageId) {
     const client = getClient();
     const res = await client.im.message.get({
       path: { message_id: messageId },
+      params: MESSAGE_GET_PARAMS,
     });
     if (res.code === 0 && res.data?.items?.[0]) {
       const msg = res.data.items[0];
-      const senderId = msg.sender?.id;
-      const senderName = await resolveUserName(senderId);
-      const content = JSON.parse(msg.body?.content || '{}');
-      let text;
-      if (msg.msg_type === 'text') {
-        text = content.text || '';
-      } else if (msg.msg_type === 'post') {
-        ({ text } = extractPostText(JSON.parse(msg.body?.content || '{}').content || [], messageId));
-      } else {
-        text = `[${msg.msg_type} message]`;
-      }
-      // Resolve @mentions in quoted message
-      if (msg.mentions && msg.mentions.length > 0) {
-        text = resolveMentions(text, msg.mentions);
-      }
-      return { sender: senderName, text };
+      const senderName = await resolveUserName(null, msg.sender?.id);
+      return { sender: senderName, text: parseMessageItemText(msg, messageId) };
     }
   } catch (err) {
     console.log(`[feishu] Failed to fetch quoted message ${messageId}: ${err.message}`);
   }
   return null;
+}
+
+async function fetchMessageItems(messageId) {
+  const { getClient } = await import('./lib/client.js');
+  const client = getClient();
+  const res = await client.im.message.get({
+    path: { message_id: messageId },
+    params: MESSAGE_GET_PARAMS,
+  });
+  return itemsFromResponse(res, messageId);
+}
+
+async function fetchMergeForwardContent(messageId) {
+  try {
+    return await renderMergeForward({
+      items: await fetchMessageItems(messageId),
+      rootId: messageId,
+      parseItemText: (item) => parseMessageItemText(item, item.message_id),
+      resolveSenderName: (item) => resolveUserName(null, item.sender?.id),
+      fetchItems: fetchMessageItems,
+      log: (message) => console.log(`[feishu] ${message}`),
+    });
+  } catch (err) {
+    console.log(`[feishu] Failed to fetch merge_forward content ${messageId}: ${err.message}`);
+    return '[merge_forward message, failed to fetch content]';
+  }
+}
+
+async function resolveMergeForwardText(extracted) {
+  if (!extracted.deferredMergeForwardId) return extracted.text;
+  return fetchMergeForwardContent(extracted.deferredMergeForwardId);
 }
 
 /**
@@ -1046,6 +1113,24 @@ function extractMessageContent(message) {
       return { text: '', imageKeys: content.image_key ? [content.image_key] : [], fileKey: null, fileName: null };
     case 'file':
       return { text: '', imageKeys: [], fileKey: content.file_key, fileName: content.file_name || 'unknown' };
+    case 'audio':
+      return { text: `[audio, file_key: ${content.file_key || 'unknown'}, msg_id: ${message.message_id}]`, imageKeys: [], fileKey: null, fileName: null };
+    case 'media':
+      return { text: `[media: ${content.file_name || 'video'}, file_key: ${content.file_key || 'unknown'}, msg_id: ${message.message_id}]`, imageKeys: [], fileKey: null, fileName: null };
+    case 'sticker':
+      return { text: `[sticker, file_key: ${content.file_key || 'unknown'}]`, imageKeys: [], fileKey: null, fileName: null };
+    case 'interactive':
+      return { text: extractInteractiveText(content), imageKeys: [], fileKey: null, fileName: null };
+    case 'merge_forward':
+      // The child fetch is intentionally deferred until the DM/group access
+      // checks in handleMessage have accepted the sender and chat.
+      return {
+        text: null,
+        imageKeys: [],
+        fileKey: null,
+        fileName: null,
+        deferredMergeForwardId: message.message_id,
+      };
     default:
       return { text: `[${msgType} message]`, imageKeys: [], fileKey: null, fileName: null };
   }
@@ -1140,8 +1225,13 @@ async function handleMessage(data) {
   // Unified dedup check (both websocket and webhook modes)
   if (isDuplicate(messageId)) return;
 
-  const { text, imageKeys, fileKey, fileName } = extractMessageContent(message);
-  console.log(`[feishu] ${chatType} message from ${senderUserId}: ${(text || '').substring(0, 50) || '[media]'}...`);
+  const extracted = extractMessageContent(message);
+  let { text } = extracted;
+  const { imageKeys, fileKey, fileName } = extracted;
+  const preview = extracted.deferredMergeForwardId
+    ? '[merge_forward, pending access check]'
+    : ((text || '').substring(0, 50) || '[media]');
+  console.log(`[feishu] ${chatType} message from ${senderUserId}: ${preview}...`);
 
   // Build log text with file/image metadata
   let logText = text;
@@ -1173,6 +1263,11 @@ async function handleMessage(data) {
       console.log(`[feishu] Private message from non-allowed user ${senderUserId} (dmPolicy=${config.dmPolicy || 'owner'}), rejecting`);
       sendMessage(chatId, "Sorry, I'm not available for private messages. Please ask my owner to grant you access.").catch(() => {});
       return;
+    }
+
+    if (extracted.deferredMergeForwardId) {
+      text = await resolveMergeForwardText(extracted);
+      logText = text;
     }
 
     await logMessage(chatType, chatId, senderUserId, senderOpenId, logText, messageId, data._timestamp || null, mentions, threadId);
@@ -1282,6 +1377,11 @@ async function handleMessage(data) {
         console.log(`[feishu] Sender ${senderUserId} not in group ${chatId} allowFrom, ignoring`);
       }
       return;
+    }
+
+    if (extracted.deferredMergeForwardId) {
+      text = await resolveMergeForwardText(extracted);
+      logText = text;
     }
 
     if (!smart && !mentioned) {
