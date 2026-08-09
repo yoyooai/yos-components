@@ -9,6 +9,7 @@
 
 import * as lark from '@larksuiteoapi/node-sdk';
 import { getCredentials } from './config.js';
+import { createApiClient } from './lark-sdk.js';
 
 let clientInstance = null;
 
@@ -26,7 +27,7 @@ export function getClient() {
     throw new Error('FEISHU_APP_ID and FEISHU_APP_SECRET must be set in ~/yos/.env');
   }
 
-  clientInstance = new lark.Client({
+  clientInstance = createApiClient({
     appId: creds.app_id,
     appSecret: creds.app_secret,
     appType: lark.AppType.SelfBuild,
