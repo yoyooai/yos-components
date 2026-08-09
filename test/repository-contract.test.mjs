@@ -51,6 +51,9 @@ test('component metadata is independently versioned for the current YOS contract
   assert.match(skill, /^name: feishu$/m);
   assert.match(skill, /name: yos-feishu/);
   assert.match(skill, /~\/yos\/components\/feishu/);
+  assert.match(skill, /^capabilities:\n  - id: communication\.message$/m);
+  assert.match(skill, /^    operations: \[send, receive\]$/m);
+  assert.match(skill, /^    stability: stable$/m);
 
   // The component declares its version twice. Pinning a literal here only
   // proves someone remembered to edit the test on release day; requiring the

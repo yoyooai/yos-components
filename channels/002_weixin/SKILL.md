@@ -7,6 +7,12 @@ description: >-
   originating user, and checking account or service health. Config and account
   data live under ~/yos/components/weixin. Service: pm2 yos-weixin.
 type: communication
+capabilities:
+  - id: communication.message
+    title: 微信私聊消息
+    operations: [send, receive]
+    keywords: [message, chat, im, weixin]
+    stability: beta
 
 # YOS links these into ~/yos/bin on install. package.json's own bin field is not
 # read — components are installed as skill directories, so npm never links it.

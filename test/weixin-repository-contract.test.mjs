@@ -52,6 +52,9 @@ test('Weixin metadata targets the current YOS component contract', () => {
   assert.match(skill, /^name: weixin$/m);
   assert.match(skill, /name: yos-weixin/);
   assert.match(skill, /~\/yos\/components\/weixin/);
+  assert.match(skill, /^capabilities:\n  - id: communication\.message$/m);
+  assert.match(skill, /^    operations: \[send, receive\]$/m);
+  assert.match(skill, /^    stability: beta$/m);
 
   // See the Feishu contract: the two declarations must agree with each other,
   // which is the drift that would actually reach a user.

@@ -15,6 +15,12 @@ description: >-
   (7) troubleshooting Feishu WebSocket or webhook issues.
   Config at ~/yos/components/feishu/config.json. Service: pm2 yos-feishu.
 type: communication
+capabilities:
+  - id: communication.message
+    title: 飞书消息
+    operations: [send, receive]
+    keywords: [message, chat, im, feishu]
+    stability: stable
 
 lifecycle:
   npm: true

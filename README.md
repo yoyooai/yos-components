@@ -30,6 +30,17 @@ not claimed until separately verified.
 - YOS core runtime, memory, task and upgrade logic remain in the `YOS` repository.
 - A channel becomes installable only after independent verification, packaging
   and Registry publication.
+- Capability declarations live in each released `SKILL.md`; component identity
+  and YOS/Node compatibility remain in `package.json`. Do not add a second
+  component manifest or copy artifact URLs and digests into this repository.
+
+## Capability Contract
+
+Feishu and Weixin declare `communication.message` with `send` and `receive`
+operations. The YOS release shelf derives its capability reverse index from
+reviewed component tags, so adding a new provider does not require a YOS Core
+release. Components without a `capabilities` block remain valid legacy
+components and are reported as undeclared rather than unhealthy.
 
 ## Planned Workflow
 
