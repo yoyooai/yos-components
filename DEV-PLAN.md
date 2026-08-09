@@ -4,10 +4,10 @@
 
 - Repository: `yoyooai/yos-components`
 - Component: `channels/001_feishu`
-- YOS contract: `0.1.0-alpha.1`
-- Node contract: `>=24.18.0 <25.0.0`
-- Upstream: `zylos-ai/zylos-feishu@877690965798b99979f21211290d6f284be787b7`
-- Upstream release: `0.3.4`
+- YOS component candidate: `0.1.4`
+- Node contract: `>=20.20.0`
+- Upstream: `zylos-ai/zylos-feishu@a683464aee51d0318a98cb28581fc911b37c66ee`
+- Upstream release: `0.3.5`
 
 ## Work Items
 
