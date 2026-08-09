@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { verifyTestPolicy } from './test-policy.mjs';
+import { verifyProgressLog } from './progress-log.mjs';
 import { loadApprovedTestBaselines, verifyTapResult } from './test-baseline-policy.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -87,6 +88,7 @@ export function runVerification({
   testBaselines,
   steps = DEFAULT_STEPS,
   verifyTestPolicyImpl = verifyTestPolicy,
+  verifyProgressLogImpl = verifyProgressLog,
   runTestSuitesImpl = runTestSuites,
   verifyRecordedTestCountsImpl = verifyRecordedTestCounts,
   executeTestGateImpl = executeTestGate,
@@ -98,6 +100,9 @@ export function runVerification({
   let stepsPassed = false;
   try {
     verifyTestPolicyImpl({ root });
+    // Cheapest check here, and shipping a component version that is missing from
+    // the progress log is how the log stops being worth reading.
+    verifyProgressLogImpl(root);
     approvedBaselines = testBaselines ?? loadApprovedTestBaselines(path.join(root, 'scripts', 'test-baselines.json'));
     counts = executeTestGateImpl({
       root,
