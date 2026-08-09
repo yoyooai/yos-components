@@ -259,6 +259,14 @@ export function installLarkCliSkills(skillDir) {
   }
 
   execFileSync('npx', [
+    // `--yes` must come before the package name, or npx treats it as an
+    // argument for xc-skills and keeps its own question for itself:
+    //   Need to install the following packages: xc-skills@1.2.3
+    //   Ok to proceed? (y)
+    // On a terminal that question waits forever, so an install that had
+    // already answered everything else still hung here — the trailing -y
+    // below only ever spoke to xc-skills, never to npx.
+    '--yes',
     'xc-skills@latest',
     'add',
     `${XC_SKILLS_SOURCE}#v${target}`,
@@ -341,4 +349,24 @@ export function syncCredentialsToLarkCli(opts = {}) {
     configPath: path.join(process.env.HOME || '', '.lark-cli', 'config.json'),
     keychainID: `appsecret:${appId}`,
   };
+}
+
+/**
+ * Whether this install may stop and ask the customer a question.
+ *
+ * Having a terminal means we *can* ask. It does not mean we may: `yos add
+ * feishu -y` (and any script-driven install) promises the customer that
+ * nothing will stop for input, and the CLI passes that promise down as
+ * YOS_ASSUME_YES. A hook that checks only `isTTY` breaks the promise on the
+ * very terminal the promise was made on — which is exactly how an unattended
+ * install came to hang on "Choose mode [1/2]".
+ *
+ * @param {object} [opts]
+ * @param {boolean} [opts.isTTY] - whether stdin is a terminal
+ * @param {NodeJS.ProcessEnv} [opts.env] - environment to read the promise from
+ * @returns {boolean}
+ */
+export function mayAskInteractively({ isTTY = process.stdin.isTTY === true, env = process.env } = {}) {
+  if (env.YOS_ASSUME_YES === '1') return false;
+  return isTTY === true;
 }

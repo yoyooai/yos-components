@@ -21,6 +21,7 @@ import {
   requireMinCoreVersion,
   installLarkCliBinary,
   installLarkCliSkills,
+  mayAskInteractively,
   syncCredentialsToLarkCli,
 } from './post-install-shared.js';
 
@@ -40,7 +41,7 @@ const INITIAL_CONFIG = {
   message: { useMarkdownCard: true }
 };
 
-const isInteractive = process.stdin.isTTY === true;
+const isInteractive = mayAskInteractively();
 
 function writePrivateConfig(config) {
   const configPath = path.join(DATA_DIR, 'config.json');
@@ -139,6 +140,14 @@ if (isInteractive) {
 
   writePrivateConfig(config);
   console.log(`\n  Connection mode set to: ${mode}`);
+} else {
+  // Silence here is what an unattended install used to get: a connection mode
+  // was chosen for the customer and never mentioned, so a machine that needed
+  // webhook looked identical to one that wanted websocket. Say what was picked
+  // and where to change it.
+  console.log('\nConnection Mode:');
+  console.log(`  Using the default (${INITIAL_CONFIG.connection_mode}) — not asking, because this install is non-interactive.`);
+  console.log(`  To use webhook instead, set connection_mode in ${path.join(DATA_DIR, 'config.json')} and run: yos restart feishu`);
 }
 
 // 5. lark-cli integration (idempotent — safe to re-run on reinstall)
