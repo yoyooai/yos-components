@@ -1,6 +1,6 @@
 {
   "name": "yos-weixin",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Independently installable personal Weixin channel for YOS",
   "type": "module",
   "main": "src/index.ts",
