@@ -46,6 +46,24 @@
       "minimumTests": 2
     },
     {
+      "path": "channels/001_feishu/test/card-text.test.js",
+      "minimumTests": 11
+    },
+    {
+      "path": "channels/001_feishu/test/merge-forward.test.js",
+      "minimumTests": 14
+    },
+    {
+      "path": "channels/001_feishu/test/yos-adaptation.test.js",
+      "minimumTests": 4
+    },
+    {
+      "path": "channels/001_feishu/src/lib/card-text.js"
+    },
+    {
+      "path": "channels/001_feishu/src/lib/merge-forward.js"
+    },
+    {
       "path": "channels/002_weixin/test/entrypoints-boot.test.ts",
       "minimumTests": 2
     },
