@@ -93,7 +93,7 @@
     },
     {
       "path": "test/release-version-policy.test.mjs",
-      "minimumTests": 2
+      "minimumTests": 3
     },
     {
       "path": "test/release-version-wiring.test.mjs",
