@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.4 - 2026-08-09
+
+- Absorb the reviewed message-reading changes from upstream Feishu `0.3.5`:
+  interactive cards, audio, media, stickers, quoted rich messages and merged
+  forwards now retain readable content instead of generic placeholders.
+- Resolve nested merged forwards with bounded depth and fetch counts. A failed
+  Feishu read-back is reported as failed content rather than a false empty
+  conversation.
+- Defer merged-forward API reads until YOS DM/group access checks have passed.
+  Existing owner binding, group policy and C4 delivery behavior are unchanged.
+- Keep unknown card payloads out of service logs while retaining a fixed
+  diagnostic and safe placeholder.
+
 ## 0.1.3 - 2026-08-09
 
 - Stop asking during an install that promised not to ask. `yos add feishu -y`
