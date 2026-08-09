@@ -13,6 +13,7 @@
 | 8 | Repository test-guard self-protection | Development complete; independent acceptance pending |
 | 9 | Repository test-gate final-result enforcement | Development complete; independent acceptance pending |
 | 10 | Executed-test gate returns raw data only; outer verification owns the verdict | Development complete; independent acceptance pending |
+| 11 | Feishu upstream 0.3.5 rich-message and merge-forward sync | Development complete; independent acceptance pending |
 
 The first formal component is `channels/001_feishu`. Other channels may be
 developed on isolated branches while an earlier channel is under review, but
