@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const COMPONENT = path.join(ROOT, 'channels', '001_feishu');
-const UPSTREAM_COMMIT = '877690965798b99979f21211290d6f284be787b7';
-const UPSTREAM_ARCHIVE_SHA256 = 'a7ceff5a7633e9a9041bbefaa5426108ce520b1b6b2bb5ce43e9da9a0aeac398';
+const UPSTREAM_COMMIT = 'a683464aee51d0318a98cb28581fc911b37c66ee';
+const UPSTREAM_ARCHIVE_SHA256 = 'adb0585c1ffb5bb9d1cf5e498ed2f37caab4380f8ea91e8b96a64af2b2dbe562';
 
 function read(relativePath) {
   return fs.readFileSync(path.join(COMPONENT, relativePath), 'utf8');
@@ -44,7 +44,7 @@ test('component metadata is independently versioned for the current YOS contract
   assert.deepEqual(pkg.yos, {
     id: 'channel.feishu',
     core: '>=0.1.0-alpha.1 <0.2.0',
-    upstreamVersion: '0.3.4',
+    upstreamVersion: '0.3.5',
   });
 
   const skill = read('SKILL.md');
@@ -68,7 +68,7 @@ test('provenance locks the exact imported source and archive', () => {
   const provenance = JSON.parse(read('provenance/upstream.json'));
   assert.equal(provenance.repository, 'https://github.com/zylos-ai/zylos-feishu');
   assert.equal(provenance.commit, UPSTREAM_COMMIT);
-  assert.equal(provenance.version, '0.3.4');
+  assert.equal(provenance.version, '0.3.5');
   assert.equal(provenance.archiveSha256, UPSTREAM_ARCHIVE_SHA256);
 });
 
