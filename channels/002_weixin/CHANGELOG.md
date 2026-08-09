@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3 - 2026-08-10
+
+- Declare the `communication.message` capability for read-only YOS capability
+  discovery. Runtime messaging, credentials and owner binding are unchanged.
+- Add a repository release gate that rejects changed package contents under an
+  already published component version.
+
 ## 0.1.0-alpha.3 - 2026-08-05
 
 - Declare `yos-weixin` under `bin` in SKILL.md, and ship a `scripts/login.js`
