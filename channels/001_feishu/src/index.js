@@ -25,6 +25,7 @@ import { listChatMembers } from './lib/chat.js';
 import { sendThreadAware } from './lib/reply-send.js';
 import { resolveDisplayName, createFallbackNotice } from './lib/name-resolution.js';
 import { createWsClient, createEventDispatcher, createApiClient } from './lib/lark-sdk.js';
+import { describeInstance, duplicateConnectionNotice } from './lib/instance-identity.js';
 
 // C4 receive interface path
 const C4_RECEIVE = path.join(process.env.HOME, 'yos/.claude/skills/comm-bridge/scripts/c4-receive.js');
@@ -619,7 +620,7 @@ async function logMessage(chatType, chatId, userId, openId, text, messageId, tim
     recordHistoryEntry(chatId, logEntry);
   }
 
-  console.log(`[feishu] Logged: [${userName}] ${(resolvedText || '').substring(0, 30)}...`);
+  console.log(`[feishu] Logged: [${userName}] ${(resolvedText || '').substring(0, 30)}... (handled by ${describeInstance({ appId: botAppId }).short})`);
 }
 
 // Get group context messages (with API fallback after restart)
@@ -1631,6 +1632,13 @@ if (!creds.app_id || !creds.app_secret) {
     const creds2 = getCredentials();
     botAppId = creds2.app_id || '';
   } catch {}
+
+  // Say which machine this is before any traffic arrives. Nothing can detect a
+  // second machine on the same App ID, so the identity has to be on record
+  // *before* anyone starts wondering why the bot contradicts itself.
+  for (const line of duplicateConnectionNotice(describeInstance({ appId: botAppId }))) {
+    console.log(line);
+  }
 
   // Start selected transport
   if (connectionMode === 'webhook') {
