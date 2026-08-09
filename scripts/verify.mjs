@@ -16,6 +16,7 @@ export const DEFAULT_TEST_SUITES = [
 ];
 
 export const DEFAULT_STEPS = [
+  ['Released version immutability', process.execPath, ['scripts/release-version-policy.mjs']],
   ['Feishu audit', 'npm', [
     'audit',
     '--prefix',
