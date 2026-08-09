@@ -11,7 +11,7 @@ channel is published.
 
 | Channel | Component | Version | Development | Independent acceptance | Published |
 |---|---|---:|---|---|---|
-| Feishu | `channels/001_feishu` | `0.1.0-alpha.1` | Complete | Pending | No |
+| Feishu | `channels/001_feishu` | `0.1.4` | Complete | Pending for 0.1.4 | No |
 | Weixin | `channels/002_weixin` | `0.1.0-alpha.1` | Complete | Pending | No |
 
 Feishu is installable from its local package for isolated verification. It is

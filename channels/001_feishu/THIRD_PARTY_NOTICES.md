@@ -1,7 +1,7 @@
 # Third-Party Notices
 
-This component is derived from `zylos-ai/zylos-feishu` version 0.3.4 at commit
-`877690965798b99979f21211290d6f284be787b7`.
+This component is derived from `zylos-ai/zylos-feishu` version 0.3.5 at commit
+`a683464aee51d0318a98cb28581fc911b37c66ee`.
 
 The upstream software is provided under the MIT License. Its copyright notice
 is preserved in this component's `LICENSE` file:

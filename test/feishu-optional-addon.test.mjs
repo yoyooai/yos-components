@@ -52,6 +52,11 @@ test('the hook runs to completion when npm cannot install globally', () => {
     '#!/bin/sh\nif [ "$1" = "install" ]; then echo "npm error EACCES: permission denied" >&2; exit 243; fi\nexec /usr/bin/env npm "$@"\n',
     { mode: 0o755 },
   );
+  fs.writeFileSync(
+    path.join(binDir, 'yos'),
+    '#!/bin/sh\necho 0.1.0\n',
+    { mode: 0o755 },
+  );
 
   const dataDir = path.join(home, 'yos', 'components', 'feishu');
   fs.mkdirSync(dataDir, { recursive: true });
