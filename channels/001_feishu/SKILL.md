@@ -341,6 +341,9 @@ If your domain is behind Cloudflare proxy with Flexible SSL mode, Caddy's automa
 
 First user to send a private message becomes the owner (primary partner).
 Owner always bypasses all access checks (DM and group) regardless of policy settings.
+This first-private-message bootstrap is intentional product behavior. Once bound,
+later messages never replace the owner automatically. An owner change is a manual
+administrative action and requires an explicit request from the current owner.
 
 Owner info stored in config.json:
 ```json
