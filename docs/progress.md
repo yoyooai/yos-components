@@ -79,7 +79,7 @@
 | **关键文件不许删 / 不许清空** | `scripts/critical-test-files.json` | 删掉护栏测试或配置 → 红 |
 | **计数门禁的判决必须在 `try` 外** | `scripts/verify.mjs` | 标记和判决都写在 `try` 里，外层包一层 `catch` 就能吞掉整道门禁 |
 | **入口点必须能真启动** | `test/` 下的 boot 测试 | 「装完就死」那类回归会被挡住 |
-| **已发布版本内容不可替换** | `scripts/release-version-policy.mjs` | 当前包与同版本 tag 内容不同 → 红，必须先升组件版本 |
+| **已发布版本内容不可替换** | `scripts/release-version-policy.mjs` | 当前包与同版本 tag 内容不同 → 红，必须先升组件版本；仓库看不到任何 tag 时同样报红，不能静默跳过 |
 
 ### 放行标准：150 分线
 
