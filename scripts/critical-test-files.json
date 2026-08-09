@@ -89,6 +89,17 @@
       "path": "scripts/verify-weixin-package.mjs"
     },
     {
+      "path": "scripts/release-version-policy.mjs"
+    },
+    {
+      "path": "test/release-version-policy.test.mjs",
+      "minimumTests": 2
+    },
+    {
+      "path": "test/release-version-wiring.test.mjs",
+      "minimumTests": 1
+    },
+    {
       "path": "channels/002_weixin/provenance/upstream.json"
     },
     {
