@@ -8,6 +8,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const COMPONENT = path.join(ROOT, 'channels', '001_feishu');
 const UPSTREAM_COMMIT = 'a683464aee51d0318a98cb28581fc911b37c66ee';
 const UPSTREAM_ARCHIVE_SHA256 = 'adb0585c1ffb5bb9d1cf5e498ed2f37caab4380f8ea91e8b96a64af2b2dbe562';
+const UPSTREAM_ARCHIVE_URL = `https://codeload.github.com/zylos-ai/zylos-feishu/tar.gz/${UPSTREAM_COMMIT}`;
 
 function read(relativePath) {
   return fs.readFileSync(path.join(COMPONENT, relativePath), 'utf8');
@@ -72,6 +73,7 @@ test('provenance locks the exact imported source and archive', () => {
   assert.equal(provenance.repository, 'https://github.com/zylos-ai/zylos-feishu');
   assert.equal(provenance.commit, UPSTREAM_COMMIT);
   assert.equal(provenance.version, '0.3.5');
+  assert.equal(provenance.archiveUrl, UPSTREAM_ARCHIVE_URL);
   assert.equal(provenance.archiveSha256, UPSTREAM_ARCHIVE_SHA256);
 });
 
