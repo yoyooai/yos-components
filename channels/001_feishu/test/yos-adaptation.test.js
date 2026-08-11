@@ -26,7 +26,7 @@ test('C4 delivery carries the original Feishu message ID as the idempotency key'
   assert.match(source, /processedMessages\.delete\(messageId\)/);
 });
 
-test('merge-forward content is fetched only after group access checks pass', () => {
+test('merge-forward content is fetched only after channel access checks pass', () => {
   const source = fs.readFileSync(path.join(ROOT, 'src', 'index.js'), 'utf8');
   const handlerStart = source.indexOf('async function handleMessage(data)');
   const handlerEnd = source.indexOf('// Initialize bot identity', handlerStart);
@@ -37,9 +37,14 @@ test('merge-forward content is fetched only after group access checks pass', () 
   assert.match(handler, /const extracted = extractMessageContent\(message\);/);
 
   const groupStart = handler.indexOf("if (chatType === 'group')");
+  const privateStart = handler.indexOf("if (chatType === 'p2p')");
+  const privateBlock = handler.slice(privateStart, groupStart);
   const groupBlock = handler.slice(groupStart);
 
-  // Private-message ordering is covered behaviorally in dm-access.test.js.
+  assert.ok(privateStart !== -1 && groupStart > privateStart);
+  assert.match(privateBlock, /const dmAccess = await authorizePrivateMessage\(\{/);
+  assert.doesNotMatch(privateBlock, /await resolveMergeForwardText\(extracted\)/);
+  assert.match(privateBlock, /text = dmAccess\.protectedContent;/);
   assert.ok(groupBlock.indexOf('if (!allowedGroup') < groupBlock.indexOf('resolveMergeForwardText(extracted)'));
   assert.ok(groupBlock.indexOf('if (!isSenderAllowedInGroup(') < groupBlock.indexOf('resolveMergeForwardText(extracted)'));
 });
