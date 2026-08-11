@@ -10,6 +10,10 @@ import {
 
 const ROOT = 'om_root';
 
+test('nested merge-forward fetch budget is exactly 12', () => {
+  assert.equal(MAX_MERGE_FORWARD_FETCHES, 12);
+});
+
 // Minimal stand-ins for index.js's parser/name-resolver. The real ones are
 // exercised through the live component; here we only care about tree assembly.
 const parseItemText = (item) => {
