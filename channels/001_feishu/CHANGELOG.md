@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.5 - 2026-08-11
+
+- Preserve the existing first-private-message owner contract while moving DM
+  authorization into a behavior-tested gate.
+- Keep merged-forward reads behind that gate: rejected private senders cannot
+  trigger `im.message.get`.
+- Pin the nested merged-forward fetch budget to 12 and record the exact upstream
+  archive URL alongside its commit and SHA-256.
+
 ## 0.1.4 - 2026-08-09
 
 - Absorb the reviewed message-reading changes from upstream Feishu `0.3.5`:
