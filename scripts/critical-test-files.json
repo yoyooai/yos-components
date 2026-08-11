@@ -51,7 +51,11 @@
     },
     {
       "path": "channels/001_feishu/test/merge-forward.test.js",
-      "minimumTests": 14
+      "minimumTests": 15
+    },
+    {
+      "path": "channels/001_feishu/test/dm-access.test.js",
+      "minimumTests": 2
     },
     {
       "path": "channels/001_feishu/test/yos-adaptation.test.js",
@@ -62,6 +66,9 @@
     },
     {
       "path": "channels/001_feishu/src/lib/merge-forward.js"
+    },
+    {
+      "path": "channels/001_feishu/src/lib/dm-access.js"
     },
     {
       "path": "channels/002_weixin/test/entrypoints-boot.test.ts",
