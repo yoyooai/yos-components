@@ -28,6 +28,7 @@ import { createWsClient, createEventDispatcher, createApiClient } from './lib/la
 import { describeInstance, duplicateConnectionNotice } from './lib/instance-identity.js';
 import { extractInteractiveText } from './lib/card-text.js';
 import { renderMergeForward, itemsFromResponse } from './lib/merge-forward.js';
+import { authorizePrivateMessage, isOwner } from './lib/dm-access.js';
 
 // C4 receive interface path
 const C4_RECEIVE = path.join(process.env.HOME, 'yos/.claude/skills/comm-bridge/scripts/c4-receive.js');
@@ -1136,48 +1137,6 @@ function extractMessageContent(message) {
   }
 }
 
-// Bind owner (first private chat user)
-async function bindOwner(userId, openId) {
-  const userName = await resolveUserName(userId, openId);
-  const previousOwner = config.owner;
-  config.owner = {
-    bound: true,
-    user_id: userId,
-    open_id: openId,
-    name: userName
-  };
-  if (!saveConfig(config)) {
-    config.owner = previousOwner;
-    console.error('[feishu] Failed to persist owner binding');
-    return null;
-  }
-  console.log(`[feishu] Owner bound: ${userName} (${userId})`);
-  return userName;
-}
-
-// Check if user is owner
-function isOwner(userId, openId) {
-  if (!config.owner?.bound) return false;
-  const ownerUserId = config.owner.user_id;
-  const ownerOpenId = config.owner.open_id;
-  return (ownerUserId !== undefined && ownerUserId !== null && userId !== undefined && userId !== null && String(ownerUserId) === String(userId))
-    || (ownerOpenId !== undefined && ownerOpenId !== null && openId !== undefined && openId !== null && String(ownerOpenId) === String(openId));
-}
-
-// Check DM access — uses dmPolicy + dmAllowFrom
-function isDmAllowed(userId, openId) {
-  if (isOwner(userId, openId)) return true;
-  const policy = config.dmPolicy || 'owner';
-  if (policy === 'open') return true;
-  if (policy === 'owner') return false;
-  // policy === 'allowlist'
-  const allowFrom = (Array.isArray(config.dmAllowFrom) ? config.dmAllowFrom : []).map(String);
-  const normalizedUserId = userId === undefined || userId === null ? '' : String(userId);
-  const normalizedOpenId = openId === undefined || openId === null ? '' : String(openId);
-  return (normalizedUserId && allowFrom.includes(normalizedUserId)) ||
-    (normalizedOpenId && allowFrom.includes(normalizedOpenId));
-}
-
 // Reply-to (threaded/quoted) sends only make sense in group chats. In a p2p DM
 // they silently drop (Feishu returns code:0 but the reply is not surfaced in the
 // main view), so this must be chat-type-aware — hence chatType is required.
@@ -1254,19 +1213,31 @@ async function handleMessage(data) {
 
   // Private chat handling
   if (chatType === 'p2p') {
-    if (!config.owner?.bound) {
-      const boundOwner = await bindOwner(senderUserId, senderOpenId);
-      if (!boundOwner) return;
+    const dmAccess = await authorizePrivateMessage({
+      config,
+      userId: senderUserId,
+      openId: senderOpenId,
+      resolveUserName,
+      saveConfig,
+      resolveProtectedContent: extracted.deferredMergeForwardId
+        ? () => resolveMergeForwardText(extracted)
+        : null,
+    });
+    if (dmAccess.bindingFailed) {
+      console.error('[feishu] Failed to persist owner binding');
+      return;
     }
-
-    if (!isDmAllowed(senderUserId, senderOpenId)) {
+    if (dmAccess.boundOwnerName) {
+      console.log(`[feishu] Owner bound: ${dmAccess.boundOwnerName} (${senderUserId})`);
+    }
+    if (!dmAccess.allowed) {
       console.log(`[feishu] Private message from non-allowed user ${senderUserId} (dmPolicy=${config.dmPolicy || 'owner'}), rejecting`);
       sendMessage(chatId, "Sorry, I'm not available for private messages. Please ask my owner to grant you access.").catch(() => {});
       return;
     }
 
     if (extracted.deferredMergeForwardId) {
-      text = await resolveMergeForwardText(extracted);
+      text = dmAccess.protectedContent;
       logText = text;
     }
 
@@ -1346,7 +1317,7 @@ async function handleMessage(data) {
   // Group chat handling
   if (chatType === 'group') {
     const mentioned = isBotMentioned(mentions, botOpenId);
-    const senderIsOwner = isOwner(senderUserId, senderOpenId);
+    const senderIsOwner = isOwner(config, senderUserId, senderOpenId);
     const groupPolicy = config.groupPolicy || 'allowlist';
     if (groupPolicy === 'disabled') {
       if (mentioned) {
