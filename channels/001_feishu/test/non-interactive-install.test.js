@@ -77,7 +77,7 @@ describe('sub-skill install must not stop for npx (structural)', () => {
     // for a package it has not cached. A `-y` after the package name is an
     // argument for that package, not an answer for npx — the install hung
     // right here with everything else already answered.
-    const at = source.indexOf("execFileSync('npx', [");
+    const at = source.indexOf("run('npx', [");
     assert.ok(at > 0, 'the npx call is gone — re-check this guard');
     const call = source.slice(at, source.indexOf(']', at));
     const yesAt = call.indexOf("'--yes'");
