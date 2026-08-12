@@ -8,6 +8,9 @@
   trigger `im.message.get`.
 - Pin the nested merged-forward fetch budget to 12 and record the exact upstream
   archive URL alongside its commit and SHA-256.
+- Repair missing lark-cli sub-skills even when the Feishu component version is
+  already current. The GitHub asset fetch now has bounded retries and timeouts;
+  npm-global-install and GitHub-fetch failures use different actionable codes.
 
 ## 0.1.4 - 2026-08-09
 
