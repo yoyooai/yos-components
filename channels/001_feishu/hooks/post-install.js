@@ -168,7 +168,8 @@ try {
   installLarkCliSkills(SKILL_DIR);
   syncCredentialsToLarkCli();
 } catch (err) {
-  console.error('\n  lark-cli could not be installed:', err.message);
+  console.error(`\n  [${err.code || 'feishu_lark_cli_setup_failed'}] ${err.message}`);
+  if (err.remediation) console.error(`  ${err.remediation}`);
   console.error('  The Feishu channel itself is unaffected — messages will send and receive.');
   console.error('  Unavailable until it is installed: documents, sheets, Base, calendar,');
   console.error('  tasks, mail, drive and wiki operations.');

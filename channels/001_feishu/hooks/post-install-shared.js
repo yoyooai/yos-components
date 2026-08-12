@@ -2,7 +2,7 @@
 /**
  * Shared helpers for post-install and post-upgrade hooks.
  *
- * Four exported functions:
+ * Main exported operations:
  *   0. requireMinCoreVersion()          - guard: YOS Core > MIN_CORE_VERSION
  *   1. installLarkCliBinary()           - probe + version check + install/upgrade
  *   2. installLarkCliSkills(skillDir)   - probe + version check + install/upgrade
@@ -31,7 +31,7 @@ const __dirname = path.dirname(__filename);
 const LARK_CLI_NPM_PACKAGE = '@larksuite/cli';
 const FALLBACK_VERSION = '1.0.41';
 const XC_SKILLS_SOURCE = 'https://github.com/larksuite/cli';
-const EXPECTED_SUB_SKILLS = Object.freeze([
+export const EXPECTED_LARK_CLI_SUB_SKILLS = Object.freeze([
   'lark-apps',
   'lark-approval',
   'lark-attendance',
@@ -65,6 +65,21 @@ const DEFAULT_LARK_LANG = 'zh';
 const DEFAULT_ENV_FILE = path.join(process.env.HOME || '', 'yos/.env');
 const LOG_PREFIX = '[yos-feishu]';
 const SKILLS_VERSION_FILE = '.lark-cli-version';
+const DEFAULT_FETCH_ATTEMPTS = 3;
+const DEFAULT_FETCH_TIMEOUT_MS = 120_000;
+const DEFAULT_NPM_INSTALL_TIMEOUT_MS = 180_000;
+
+function actionableError({ code, stage, message, remediation, cause }) {
+  const error = new Error(message, cause ? { cause } : undefined);
+  error.code = code;
+  error.stage = stage;
+  error.remediation = remediation;
+  return error;
+}
+
+function wait(milliseconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
 
 function semverCompare(a, b) {
   const parse = (value) => {
@@ -181,9 +196,12 @@ function getInstalledVersion() {
 /**
  * Ensure the `lark-cli` binary is on PATH at the target version.
  */
-export function installLarkCliBinary() {
-  const target = getTargetVersion();
-  const installed = getInstalledVersion();
+export function installLarkCliBinary(options = {}) {
+  const target = options.target ?? getTargetVersion();
+  const readInstalledVersion = options.getInstalledVersion ?? getInstalledVersion;
+  const hasCommand = options.commandExists ?? commandExists;
+  const run = options.run ?? execFileSync;
+  const installed = readInstalledVersion();
 
   if (installed) {
     if (semverCompare(installed, target) >= 0) {
@@ -195,18 +213,39 @@ export function installLarkCliBinary() {
     console.log(`${LOG_PREFIX} lark-cli not found, installing ${target}`);
   }
 
-  execFileSync('npm', ['install', '-g', `${LARK_CLI_NPM_PACKAGE}@${target}`], {
-    stdio: 'inherit',
-  });
-
-  if (!commandExists('lark-cli')) {
-    throw new Error(
-      `lark-cli not found in PATH after npm install -g ${LARK_CLI_NPM_PACKAGE}@${target}`
-    );
+  try {
+    run('npm', ['install', '-g', `${LARK_CLI_NPM_PACKAGE}@${target}`], {
+      stdio: 'inherit',
+      timeout: options.timeout ?? DEFAULT_NPM_INSTALL_TIMEOUT_MS,
+    });
+  } catch (cause) {
+    throw actionableError({
+      code: 'feishu_lark_cli_npm_install_failed',
+      stage: 'npm_global_install',
+      message: `npm could not install ${LARK_CLI_NPM_PACKAGE}@${target}.`,
+      remediation: 'Run `npm config get prefix`, make that prefix writable, then retry: yos upgrade feishu',
+      cause,
+    });
   }
 
-  const newVersion = getInstalledVersion();
+  if (!hasCommand('lark-cli')) {
+    throw actionableError({
+      code: 'feishu_lark_cli_npm_install_failed',
+      stage: 'npm_global_install',
+      message: `npm finished, but lark-cli is not on PATH after installing ${LARK_CLI_NPM_PACKAGE}@${target}.`,
+      remediation: 'Add the npm global bin directory to PATH, then retry: yos upgrade feishu',
+    });
+  }
+
+  const newVersion = readInstalledVersion();
   console.log(`${LOG_PREFIX} lark-cli now at ${newVersion}`);
+}
+
+export function findMissingLarkCliSkills(skillDir) {
+  const bundlesDir = path.join(skillDir, 'references');
+  return EXPECTED_LARK_CLI_SUB_SKILLS.filter(
+    (name) => !fs.existsSync(path.join(bundlesDir, name, 'SKILL.md'))
+  );
 }
 
 /**
@@ -216,33 +255,35 @@ export function installLarkCliBinary() {
  *   - Any sub-skill directory is missing (partial install / manual deletion)
  *   - The version marker file is absent (legacy install) or below target
  */
-export function installLarkCliSkills(skillDir) {
+export function installLarkCliSkills(skillDir, options = {}) {
   if (!skillDir) {
     throw new Error('installLarkCliSkills: skillDir is required');
   }
-  const target = getTargetVersion();
+  const target = options.target ?? getTargetVersion();
+  const run = options.run ?? execFileSync;
+  const sleep = options.sleep ?? wait;
+  const maxAttempts = options.maxAttempts ?? DEFAULT_FETCH_ATTEMPTS;
+  const timeout = options.timeout ?? DEFAULT_FETCH_TIMEOUT_MS;
+  if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
+    throw new Error('installLarkCliSkills: maxAttempts must be a positive integer');
+  }
   const bundlesDir = path.join(skillDir, 'references');
   fs.mkdirSync(bundlesDir, { recursive: true });
 
   const versionFile = path.join(bundlesDir, SKILLS_VERSION_FILE);
-
-  const findMissing = () =>
-    EXPECTED_SUB_SKILLS.filter(
-      (name) => !fs.existsSync(path.join(bundlesDir, name, 'SKILL.md'))
-    );
 
   let installedSkillsVersion = null;
   try {
     installedSkillsVersion = fs.readFileSync(versionFile, 'utf-8').trim();
   } catch { /* missing = needs install */ }
 
-  const missing = findMissing();
+  const missing = findMissingLarkCliSkills(skillDir);
   const needsVersionUpgrade =
     !installedSkillsVersion || semverCompare(installedSkillsVersion, target) < 0;
 
   if (missing.length === 0 && !needsVersionUpgrade) {
     console.log(
-      `${LOG_PREFIX} all ${EXPECTED_SUB_SKILLS.length} sub-skills present at ${installedSkillsVersion}, skipping`
+      `${LOG_PREFIX} all ${EXPECTED_LARK_CLI_SUB_SKILLS.length} sub-skills present at ${installedSkillsVersion}, skipping`
     );
     return;
   }
@@ -254,32 +295,45 @@ export function installLarkCliSkills(skillDir) {
   }
   if (missing.length > 0) {
     console.log(
-      `${LOG_PREFIX} ${missing.length}/${EXPECTED_SUB_SKILLS.length} sub-skill(s) missing, repairing`
+      `${LOG_PREFIX} ${missing.length}/${EXPECTED_LARK_CLI_SUB_SKILLS.length} sub-skill(s) missing, repairing`
     );
   }
 
-  execFileSync('npx', [
-    // `--yes` must come before the package name, or npx treats it as an
-    // argument for xc-skills and keeps its own question for itself:
-    //   Need to install the following packages: xc-skills@1.2.3
-    //   Ok to proceed? (y)
-    // On a terminal that question waits forever, so an install that had
-    // already answered everything else still hung here — the trailing -y
-    // below only ever spoke to xc-skills, never to npx.
-    '--yes',
-    'xc-skills@latest',
-    'add',
-    `${XC_SKILLS_SOURCE}#v${target}`,
-    '--out',
-    bundlesDir,
-    '-y',
-  ], { stdio: 'inherit' });
+  let lastCause = null;
+  let stillMissing = missing;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      run('npx', [
+        // `--yes` must come before the package name, or npx treats it as an
+        // argument for xc-skills and keeps its own question for itself.
+        '--yes',
+        'xc-skills@latest',
+        'add',
+        `${XC_SKILLS_SOURCE}#v${target}`,
+        '--out',
+        bundlesDir,
+        '-y',
+      ], { stdio: 'inherit', timeout });
+      lastCause = null;
+    } catch (cause) {
+      lastCause = cause;
+    }
+    stillMissing = findMissingLarkCliSkills(skillDir);
+    if (stillMissing.length === 0) break;
+    if (attempt < maxAttempts) {
+      console.warn(`${LOG_PREFIX} GitHub sub-skill fetch attempt ${attempt}/${maxAttempts} did not complete; retrying`);
+      sleep(Math.min(1000 * attempt, 3000));
+    }
+  }
 
-  const stillMissing = findMissing();
   if (stillMissing.length > 0) {
-    throw new Error(
-      `installLarkCliSkills: still missing after install: ${stillMissing.join(', ')}`
-    );
+    throw actionableError({
+      code: 'feishu_subskills_fetch_failed',
+      stage: 'github_asset_fetch',
+      message: `GitHub did not provide all ${EXPECTED_LARK_CLI_SUB_SKILLS.length} Feishu sub-skills after ${maxAttempts} attempt(s). Missing: ${stillMissing.join(', ')}`,
+      remediation: 'Check outbound HTTPS access to github.com, then retry: yos upgrade feishu',
+      cause: lastCause,
+    });
   }
 
   fs.writeFileSync(versionFile, target + '\n');

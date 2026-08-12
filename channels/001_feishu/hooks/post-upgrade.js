@@ -339,7 +339,8 @@ try {
   installLarkCliSkills(SKILL_DIR);
   syncCredentialsToLarkCli();
 } catch (err) {
-  console.error('lark-cli integration migration failed:', err.message);
+  console.error(`[${err.code || 'feishu_lark_cli_setup_failed'}] ${err.message}`);
+  if (err.remediation) console.error(err.remediation);
   process.exit(1);
 }
 
