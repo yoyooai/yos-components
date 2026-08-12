@@ -81,8 +81,24 @@ test('the hook runs to completion when npm cannot install globally', () => {
     const output = `${result.stdout || ''}\n${result.stderr || ''}`;
     assert.match(output, /channel itself is unaffected/,
       `the degradation notice was not printed:\n${output}`);
-    assert.match(output, /\[post-install\] Complete!/,
+
+    // "Running to completion" is checked against the thing this test exists to
+    // protect — the developer-console steps and the webhook URL printed after
+    // the add-on — rather than against the word "Complete!".
+    //
+    // 2026-08-13 (TD-149): that word is no longer printed on this path. Saying
+    // "Complete!" after fetching none of the sub-skills is what let `yos add`
+    // stamp a green check on a half-installed component. The hook now names the
+    // degradation and ends non-zero. It still runs to the end, which is what
+    // the 2026-08-05 defect was about, and that is asserted directly below.
+    assert.match(output, /Feishu \(飞书\) Setup — Remaining Steps/,
       `the hook stopped at the optional add-on:\n${output}`);
+    assert.match(output, /im\.message\.receive_v1/,
+      `the setup steps were cut short:\n${output}`);
+    assert.match(output, /reduced functionality/,
+      `a degraded run must not read as a clean one:\n${output}`);
+    assert.notEqual(result.status, 0,
+      'a degraded run must be distinguishable from a clean one by exit code');
   } finally {
     fs.rmSync(home, { recursive: true, force: true });
   }

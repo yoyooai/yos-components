@@ -163,11 +163,13 @@ if (isInteractive) {
 // actually have to follow. Degrade, name what is unavailable, and carry on.
 requireMinCoreVersion();
 console.log('\nIntegrating lark-cli...');
+let larkCliDegraded = false;
 try {
   installLarkCliBinary();
   installLarkCliSkills(SKILL_DIR);
   syncCredentialsToLarkCli();
 } catch (err) {
+  larkCliDegraded = true;
   console.error(`\n  [${err.code || 'feishu_lark_cli_setup_failed'}] ${err.message}`);
   if (err.remediation) console.error(`  ${err.remediation}`);
   console.error('  The Feishu channel itself is unaffected — messages will send and receive.');
@@ -179,7 +181,17 @@ try {
 
 // Note: PM2 service is started by Claude after this hook completes.
 
-console.log('\n[post-install] Complete!');
+// Degrading and carrying on is deliberate — the add-on is optional and the
+// setup steps printed below are the ones the user must actually follow. What
+// was wrong was saying "Complete!" afterwards: an install that fetched none of
+// the sub-skills ended on a success line, and `yos add` printed a green check
+// over it. Report the degraded outcome and end non-zero so the caller can tell
+// the two apart; the remaining steps are still printed either way.
+if (larkCliDegraded) {
+  console.log('\n[post-install] Finished with reduced functionality — the lark-cli add-on is not installed (reason above).');
+} else {
+  console.log('\n[post-install] Complete!');
+}
 
 // Read domain from yos config for webhook URL display
 let webhookUrl = 'https://<your-domain>/feishu/webhook';
@@ -217,3 +229,9 @@ if (chosenMode === 'webhook') {
 console.log('');
 console.log('First private message to the bot will auto-bind the sender as owner.');
 console.log('========================================');
+
+// Set only after the remaining-steps guide has been printed, so signalling the
+// failure never costs the user the instructions they came for.
+if (larkCliDegraded) {
+  process.exitCode = 1;
+}

@@ -5,11 +5,11 @@
       "minimumPassed": 73
     },
     "feishu": {
-      "minimumPassed": 108
+      "minimumPassed": 113
     },
     "weixin": {
       "minimumPassed": 30
     }
   },
-  "approvedDigest": "c382512954710051ad661890b6ee08a47266e03748edb5deb53726cc9409a3a9"
+  "approvedDigest": "64cb7ea1c35846287ff0b66c9b1ebccc957fd74b0028ed9884d8263a4c8b1934"
 }

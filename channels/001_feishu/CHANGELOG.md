@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.6 - 2026-08-13
+
+### Fixed
+
+- The post-install hook no longer signs off with "[post-install] Complete!"
+  when the optional lark-cli add-on could not be installed. Ending on that line
+  is what let `yos add feishu` print a green check over an install that had
+  fetched none of its 27 sub-skills. The hook now names the reduced
+  functionality and exits non-zero so the installer can tell a degraded setup
+  from a clean one.
+- Degrading and carrying on is unchanged: the developer-console steps and the
+  webhook URL are still printed in full before the exit code is set, because a
+  failure in an optional add-on must not cost the user the instructions they
+  actually have to follow.
+
 ## 0.1.5 - 2026-08-11
 
 - Preserve the existing first-private-message owner contract while moving DM
