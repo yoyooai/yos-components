@@ -31,7 +31,6 @@ test('retries the GitHub sub-skill fetch and verifies all files before succeedin
   let attempts = 0;
   installLarkCliSkills(skillDir, {
     target: '1.0.81',
-    maxAttempts: 3,
     sleep: () => {},
     run: (command, args) => {
       attempts += 1;
@@ -45,6 +44,8 @@ test('retries the GitHub sub-skill fetch and verifies all files before succeedin
       }
     },
   });
+  // This assertion intentionally exercises the production default. Passing a
+  // maxAttempts fixture here would let DEFAULT_FETCH_ATTEMPTS regress silently.
   assert.equal(attempts, 3);
   assert.deepEqual(findMissingLarkCliSkills(skillDir), []);
 });
