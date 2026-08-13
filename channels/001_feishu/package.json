@@ -1,6 +1,6 @@
 {
   "name": "yos-feishu",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Independently installable Feishu channel for YOS",
   "type": "module",
   "main": "src/index.js",
@@ -8,6 +8,7 @@
     "src/",
     "hooks/",
     "scripts/",
+    "vendor/",
     "SKILL.md",
     "ecosystem.config.cjs",
     "README.md",

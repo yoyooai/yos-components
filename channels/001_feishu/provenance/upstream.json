@@ -20,5 +20,16 @@
     "upstream product documentation",
     "upstream logo and branding assets",
     "upstream repository automation"
+  ],
+  "vendoredAssets": [
+    {
+      "name": "Lark CLI Agent Skills",
+      "repository": "https://github.com/larksuite/cli",
+      "tag": "v1.0.81",
+      "commit": "003d0f42f84d3799c62f2a666fb0ddf4084283c7",
+      "versionSource": "package.json#larkCli.version",
+      "license": "MIT",
+      "sourceManifest": "vendor/lark-cli-skills/source.json"
+    }
   ]
 }
