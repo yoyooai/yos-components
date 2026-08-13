@@ -63,7 +63,13 @@
     },
     {
       "path": "channels/001_feishu/test/lark-cli-install.test.js",
-      "minimumTests": 5
+      "minimumTests": 12
+    },
+    {
+      "path": "channels/001_feishu/hooks/post-install.js"
+    },
+    {
+      "path": "channels/001_feishu/hooks/post-upgrade.js"
     },
     {
       "path": "channels/001_feishu/hooks/repair.js"
@@ -73,6 +79,9 @@
     },
     {
       "path": "channels/001_feishu/SKILL.md"
+    },
+    {
+      "path": "channels/001_feishu/vendor/lark-cli-skills/source.json"
     },
     {
       "path": "channels/001_feishu/src/lib/card-text.js"
