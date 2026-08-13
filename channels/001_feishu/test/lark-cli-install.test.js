@@ -140,7 +140,7 @@ test('the packaged vendor manifest matches package larkCli.version and all 27 sk
   assert.match(source.archiveSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(source.normalizations, [{
     path: 'skills/lark-apps/references/lark-apps-db-execute.md',
-    change: 'Replaced the illustrative /Users/... path with /Users/example-user for package hygiene.',
+    change: 'Replaced an illustrative private-home path with the approved example-user path.',
   }]);
   assert.deepEqual(
     EXPECTED_LARK_CLI_SUB_SKILLS.filter(

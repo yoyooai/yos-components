@@ -11,7 +11,7 @@
   "normalizations": [
     {
       "path": "skills/lark-apps/references/lark-apps-db-execute.md",
-      "change": "Replaced the illustrative /Users/... path with /Users/example-user for package hygiene."
+      "change": "Replaced an illustrative private-home path with the approved example-user path."
     }
   ]
 }
