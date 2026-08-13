@@ -18,7 +18,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { execFileSync } from 'child_process';
+import { execFileSync, spawn as spawnChild } from 'child_process';
 import { parse as parseDotenv } from 'dotenv';
 import { fileURLToPath } from 'url';
 
@@ -65,8 +65,10 @@ const DEFAULT_LARK_LANG = 'zh';
 const DEFAULT_ENV_FILE = path.join(process.env.HOME || '', 'yos/.env');
 const LOG_PREFIX = '[yos-feishu]';
 const SKILLS_VERSION_FILE = '.lark-cli-version';
+const DEFAULT_VENDOR_ROOT = path.resolve(__dirname, '..', 'vendor', 'lark-cli-skills');
 const DEFAULT_FETCH_ATTEMPTS = 3;
 const DEFAULT_FETCH_TIMEOUT_MS = 120_000;
+const DEFAULT_TERMINATION_GRACE_MS = 1_000;
 const DEFAULT_NPM_INSTALL_TIMEOUT_MS = 180_000;
 
 function actionableError({ code, stage, message, remediation, cause }) {
@@ -79,6 +81,97 @@ function actionableError({ code, stage, message, remediation, cause }) {
 
 function wait(milliseconds) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
+export function runProcessGroup(command, args, options = {}) {
+  const spawn = options.spawn ?? spawnChild;
+  const kill = options.kill ?? process.kill.bind(process);
+  const timeout = options.timeout ?? DEFAULT_FETCH_TIMEOUT_MS;
+  const gracePeriod = options.gracePeriod ?? DEFAULT_TERMINATION_GRACE_MS;
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd,
+      env: options.env,
+      stdio: options.stdio ?? 'inherit',
+      detached: true,
+    });
+    let timedOut = false;
+    let settled = false;
+
+    const finish = (operation) => {
+      if (settled) return;
+      settled = true;
+      operation();
+    };
+    const signalGroup = (signal) => {
+      try {
+        kill(-child.pid, signal);
+      } catch (error) {
+        if (error?.code !== 'ESRCH') throw error;
+      }
+    };
+    const groupExists = () => {
+      try {
+        kill(-child.pid, 0);
+        return true;
+      } catch (error) {
+        if (error?.code === 'ESRCH') return false;
+        throw error;
+      }
+    };
+    const settleAfterGroupCleanup = (operation) => {
+      if (!groupExists()) {
+        finish(operation);
+        return;
+      }
+      signalGroup('SIGTERM');
+      setTimeout(() => {
+        signalGroup('SIGKILL');
+        finish(operation);
+      }, gracePeriod);
+    };
+    const timeoutTimer = setTimeout(() => {
+      timedOut = true;
+      try {
+        signalGroup('SIGTERM');
+      } catch (error) {
+        finish(() => reject(error));
+        return;
+      }
+      setTimeout(() => {
+        try {
+          signalGroup('SIGKILL');
+          finish(() => reject(new Error(`${command} timed out after ${timeout}ms`)));
+        } catch (error) {
+          finish(() => reject(error));
+        }
+      }, gracePeriod);
+    }, timeout);
+
+    child.once('error', (error) => {
+      clearTimeout(timeoutTimer);
+      finish(() => reject(error));
+    });
+    child.once('close', (code, signal) => {
+      clearTimeout(timeoutTimer);
+      if (timedOut) return;
+      if (code === 0) {
+        try {
+          settleAfterGroupCleanup(resolve);
+        } catch (error) {
+          finish(() => reject(error));
+        }
+        return;
+      }
+      const detail = signal ? `signal ${signal}` : `status ${code}`;
+      try {
+        settleAfterGroupCleanup(() => reject(new Error(`${command} exited with ${detail}`)));
+      } catch (error) {
+        finish(() => reject(error));
+      }
+    });
+  });
 }
 
 function semverCompare(a, b) {
@@ -255,12 +348,12 @@ export function findMissingLarkCliSkills(skillDir) {
  *   - Any sub-skill directory is missing (partial install / manual deletion)
  *   - The version marker file is absent (legacy install) or below target
  */
-export function installLarkCliSkills(skillDir, options = {}) {
+export async function installLarkCliSkills(skillDir, options = {}) {
   if (!skillDir) {
     throw new Error('installLarkCliSkills: skillDir is required');
   }
   const target = options.target ?? getTargetVersion();
-  const run = options.run ?? execFileSync;
+  const run = options.run ?? runProcessGroup;
   const sleep = options.sleep ?? wait;
   const maxAttempts = options.maxAttempts ?? DEFAULT_FETCH_ATTEMPTS;
   const timeout = options.timeout ?? DEFAULT_FETCH_TIMEOUT_MS;
@@ -288,6 +381,37 @@ export function installLarkCliSkills(skillDir, options = {}) {
     return;
   }
 
+  const vendorRoot = options.vendorRoot ?? DEFAULT_VENDOR_ROOT;
+  const vendorMetadataPath = path.join(vendorRoot, 'source.json');
+  if (fs.existsSync(vendorMetadataPath)) {
+    const vendorMetadata = JSON.parse(fs.readFileSync(vendorMetadataPath, 'utf8'));
+    const expectedTag = `v${target}`;
+    if (vendorMetadata.tag !== expectedTag) {
+      throw new Error(
+        `lark-cli sub-skill vendor tag ${vendorMetadata.tag || '(missing)'} does not match target ${expectedTag}`
+      );
+    }
+    const vendorSkillsRoot = path.join(vendorRoot, 'skills');
+    const vendorMissing = EXPECTED_LARK_CLI_SUB_SKILLS.filter(
+      (name) => !fs.existsSync(path.join(vendorSkillsRoot, name, 'SKILL.md'))
+    );
+    if (vendorMissing.length === 0) {
+      for (const name of EXPECTED_LARK_CLI_SUB_SKILLS) {
+        fs.cpSync(path.join(vendorSkillsRoot, name), path.join(bundlesDir, name), {
+          recursive: true,
+          force: true,
+        });
+      }
+      const localMissing = findMissingLarkCliSkills(skillDir);
+      if (localMissing.length > 0) {
+        throw new Error(`vendored Feishu sub-skill copy incomplete: ${localMissing.join(', ')}`);
+      }
+      fs.writeFileSync(versionFile, target + '\n');
+      console.log(`${LOG_PREFIX} sub-skills installed from the bundled ${target} assets`);
+      return;
+    }
+  }
+
   if (needsVersionUpgrade) {
     console.log(
       `${LOG_PREFIX} sub-skills version ${installedSkillsVersion || '(none)'} → ${target}, upgrading`
@@ -303,7 +427,7 @@ export function installLarkCliSkills(skillDir, options = {}) {
   let stillMissing = missing;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      run('npx', [
+      await run('npx', [
         // `--yes` must come before the package name, or npx treats it as an
         // argument for xc-skills and keeps its own question for itself.
         '--yes',

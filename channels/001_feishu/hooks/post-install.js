@@ -155,8 +155,8 @@ if (isInteractive) {
 // lark-cli is an add-on: it powers the Feishu productivity surfaces (documents,
 // sheets, Base, calendar, tasks, mail, drive, wiki). Messaging — the channel
 // itself — does not need it. It is also the part most likely to fail on a
-// customer machine: it installs globally with npm and reaches GitHub for its
-// own assets.
+// customer machine: it installs globally with npm. Sub-skills are bundled with
+// this component; GitHub is only a fallback if those vendored assets are absent.
 //
 // Exiting here used to abandon the rest of this hook, so a failure in the
 // optional add-on cost the user the setup steps printed below — the ones they
@@ -166,7 +166,7 @@ console.log('\nIntegrating lark-cli...');
 let larkCliDegraded = false;
 try {
   installLarkCliBinary();
-  installLarkCliSkills(SKILL_DIR);
+  await installLarkCliSkills(SKILL_DIR);
   syncCredentialsToLarkCli();
 } catch (err) {
   larkCliDegraded = true;

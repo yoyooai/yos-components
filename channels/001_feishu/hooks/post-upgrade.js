@@ -336,7 +336,7 @@ if (fs.existsSync(configPath)) {
 console.log('\nEnsuring lark-cli integration is in place...');
 try {
   installLarkCliBinary();
-  installLarkCliSkills(SKILL_DIR);
+  await installLarkCliSkills(SKILL_DIR);
   syncCredentialsToLarkCli();
 } catch (err) {
   console.error(`[${err.code || 'feishu_lark_cli_setup_failed'}] ${err.message}`);

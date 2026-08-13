@@ -15,7 +15,7 @@ const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 try {
   requireMinCoreVersion();
   installLarkCliBinary();
-  installLarkCliSkills(SKILL_DIR);
+  await installLarkCliSkills(SKILL_DIR);
   syncCredentialsToLarkCli();
   console.log('[yos-feishu] component integrity verified');
 } catch (error) {
