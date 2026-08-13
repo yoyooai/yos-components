@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.7 - 2026-08-13
+
+### Fixed
+
+- Bundle all 27 Lark CLI sub-skills with the component, removing GitHub from
+  the normal install and repair path.
+- Keep the network fallback for damaged packages, but run it in a detached
+  process group and terminate the full tree before checking installation
+  completeness or returning to the caller.
+- Record the upstream tag, commit, archive SHA-256 and MIT license for the
+  vendored assets.
+
 ## 0.1.6 - 2026-08-13
 
 ### Fixed
