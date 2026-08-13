@@ -16,6 +16,7 @@
 | 11 | Feishu upstream 0.3.5 rich-message and merge-forward sync | Development complete; independent acceptance pending |
 | 12 | Unified capability declarations for Feishu and Weixin | Development complete; independent acceptance pending |
 | 13 | Same-version Feishu sub-skill integrity repair | Development complete; independent acceptance pending |
+| 14 | TD-159 bundled Feishu sub-skills and honest fallback cleanup | Development complete; independent acceptance pending |
 
 The first formal component is `channels/001_feishu`. Other channels may be
 developed on isolated branches while an earlier channel is under review, but
