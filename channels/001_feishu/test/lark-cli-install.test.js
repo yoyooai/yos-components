@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawn as spawnChild } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -15,6 +16,22 @@ import {
 } from '../hooks/post-install-shared.js';
 
 const COMPONENT_ROOT = path.resolve(import.meta.dirname, '..');
+const READY_TIMEOUT_MS = 5_000;
+
+function spawnAfterFileIsReady(command, args, options, readyFile) {
+  const child = spawnChild(command, args, options);
+  const deadline = Date.now() + READY_TIMEOUT_MS;
+  while ((!fs.existsSync(readyFile) || fs.statSync(readyFile).size === 0) && Date.now() < deadline) {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+  }
+  if (!fs.existsSync(readyFile) || fs.statSync(readyFile).size === 0) {
+    try {
+      process.kill(-child.pid, 'SIGKILL');
+    } catch {}
+    throw new Error(`process tree did not become ready within ${READY_TIMEOUT_MS}ms`);
+  }
+  return child;
+}
 
 function makeSkillDir(present = []) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'yos-feishu-lark-skills-'));
@@ -176,6 +193,7 @@ test('stops a stubborn descendant from writing after a timeout', async () => {
   const descendant = [
     "const fs = require('node:fs')",
     "process.on('SIGTERM', () => {})",
+    `fs.appendFileSync(${JSON.stringify(counter)}, 'r')`,
     `setInterval(() => fs.appendFileSync(${JSON.stringify(counter)}, 'x'), 10)`,
   ].join(';');
   const parent = [
@@ -186,9 +204,10 @@ test('stops a stubborn descendant from writing after a timeout', async () => {
 
   await assert.rejects(
     runProcessGroup(process.execPath, ['-e', parent], {
-      timeout: 120,
+      timeout: 250,
       gracePeriod: 80,
       stdio: 'ignore',
+      spawn: (command, args, options) => spawnAfterFileIsReady(command, args, options, counter),
     }),
     /timed out/,
   );
@@ -204,18 +223,20 @@ test('does not resolve while a successful command leaves a descendant writing', 
   const descendant = [
     "const fs = require('node:fs')",
     "process.on('SIGTERM', () => {})",
+    `fs.appendFileSync(${JSON.stringify(counter)}, 'r')`,
     `setInterval(() => fs.appendFileSync(${JSON.stringify(counter)}, 'x'), 10)`,
   ].join(';');
   const parent = [
     "const { spawn } = require('node:child_process')",
     `spawn(process.execPath, ['-e', ${JSON.stringify(descendant)}], { stdio: 'ignore' }).unref()`,
-    'setTimeout(() => {}, 80)',
+    'setTimeout(() => {}, 250)',
   ].join(';');
 
   await runProcessGroup(process.execPath, ['-e', parent], {
     timeout: 2_000,
     gracePeriod: 80,
     stdio: 'ignore',
+    spawn: (command, args, options) => spawnAfterFileIsReady(command, args, options, counter),
   });
   const stoppedAt = fs.existsSync(counter) ? fs.statSync(counter).size : 0;
   assert.ok(stoppedAt > 0, 'the descendant must write before successful cleanup resolves');
