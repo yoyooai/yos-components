@@ -62,6 +62,10 @@
       "minimumTests": 4
     },
     {
+      "path": "channels/001_feishu/test/health.test.js",
+      "minimumTests": 4
+    },
+    {
       "path": "channels/001_feishu/test/lark-cli-install.test.js",
       "minimumTests": 12
     },
@@ -91,6 +95,12 @@
     },
     {
       "path": "channels/001_feishu/src/lib/dm-access.js"
+    },
+    {
+      "path": "channels/001_feishu/src/lib/health.js"
+    },
+    {
+      "path": "channels/001_feishu/hooks/health.js"
     },
     {
       "path": "channels/002_weixin/test/entrypoints-boot.test.ts",
