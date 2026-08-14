@@ -23,7 +23,7 @@
     },
     {
       "path": "test/feishu-package-policy.test.mjs",
-      "minimumTests": 5
+      "minimumTests": 6
     },
     {
       "path": "test/weixin-repository-contract.test.mjs",

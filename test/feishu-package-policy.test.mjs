@@ -8,6 +8,9 @@ import test from 'node:test';
 import { verifyPackage } from '../scripts/verify-package.mjs';
 import { EXPECTED_LARK_CLI_SUB_SKILLS } from '../channels/001_feishu/hooks/post-install-shared.js';
 
+const LARK_CLI_ARCHIVE_SHA256 = '0c5f04972157582aa7227449da75e39d3b37698f372783952972c7f973dba0f4';
+const LARK_CLI_VENDOR_FILE_COUNT = 458;
+
 function git(root, args) {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
   if (result.status !== 0) throw new Error(result.stderr || result.stdout);
@@ -103,6 +106,15 @@ test('Feishu package gate rejects a vendor file-count mismatch', () => {
   } finally {
     fs.rmSync(fixture.root, { recursive: true, force: true });
   }
+});
+
+test('Feishu vendor provenance locks the reviewed archive and complete file count', () => {
+  const source = JSON.parse(fs.readFileSync(
+    new URL('../channels/001_feishu/vendor/lark-cli-skills/source.json', import.meta.url),
+    'utf8',
+  ));
+  assert.equal(source.archiveSha256, LARK_CLI_ARCHIVE_SHA256);
+  assert.equal(source.fileCount, LARK_CLI_VENDOR_FILE_COUNT);
 });
 
 test('Feishu package gate rejects private home paths in tracked content', () => {
