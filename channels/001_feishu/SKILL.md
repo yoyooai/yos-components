@@ -21,6 +21,7 @@ capabilities:
     operations: [send, receive]
     keywords: [message, chat, im, feishu]
     stability: stable
+    health: hooks/health.js
 
 lifecycle:
   npm: true
