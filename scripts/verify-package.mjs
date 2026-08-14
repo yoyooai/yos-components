@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { EXPECTED_LARK_CLI_SUB_SKILLS } from '../channels/001_feishu/hooks/post-install-shared.js';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const COMPONENT = path.join(ROOT, 'channels', '001_feishu');
 const REQUIRED_FILES = [
@@ -16,7 +18,10 @@ const REQUIRED_FILES = [
   'package.json',
   'provenance/upstream.json',
   'src/index.js',
+  'vendor/lark-cli-skills/LICENSE',
+  'vendor/lark-cli-skills/source.json',
 ];
+const VENDOR_SKILLS_PREFIX = 'vendor/lark-cli-skills/skills/';
 const FORBIDDEN_PATHS = [
   /(^|\/)test(s)?\//,
   /(^|\/)node_modules\//,
@@ -76,6 +81,29 @@ export function verifyPackage({
 
   for (const required of requiredFiles) {
     if (!fileSet.has(required)) throw new Error(`required package file is missing: ${required}`);
+  }
+  for (const required of ['vendor/lark-cli-skills/LICENSE', 'vendor/lark-cli-skills/source.json']) {
+    if (!fileSet.has(required)) throw new Error(`required package file is missing: ${required}`);
+  }
+  for (const name of EXPECTED_LARK_CLI_SUB_SKILLS) {
+    const skillFile = `${VENDOR_SKILLS_PREFIX}${name}/SKILL.md`;
+    if (!fileSet.has(skillFile)) {
+      throw new Error(`required packaged sub-skill is missing: ${name}`);
+    }
+  }
+
+  const sourceManifest = JSON.parse(fs.readFileSync(
+    path.join(component, 'vendor', 'lark-cli-skills', 'source.json'),
+    'utf8',
+  ));
+  const vendorFileCount = files.filter((file) => file.startsWith(VENDOR_SKILLS_PREFIX)).length;
+  if (!Number.isInteger(sourceManifest.fileCount) || sourceManifest.fileCount < 1) {
+    throw new Error('vendor source manifest fileCount must be a positive integer');
+  }
+  if (vendorFileCount !== sourceManifest.fileCount) {
+    throw new Error(
+      `packaged vendor file count ${vendorFileCount} does not match source manifest ${sourceManifest.fileCount}`,
+    );
   }
 
   const digest = createHash('sha256');
