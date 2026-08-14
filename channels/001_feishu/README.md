@@ -7,7 +7,7 @@ connections, text, cards, images, files, access policies and the bundled
 
 ## Status
 
-- Component version: `0.1.7` candidate
+- Component version: `0.1.8` candidate
 - Upstream behavior baseline: `0.3.5`
 - YOS Core contract: `>=0.1.0-alpha.1 <0.2.0`
 - Publication: not published
@@ -20,7 +20,7 @@ cd channels/001_feishu
 npm ci
 npm test
 npm pack --ignore-scripts
-yos add ./yos-feishu-0.1.7.tgz
+yos add ./yos-feishu-0.1.8.tgz
 ```
 
 The package requires `FEISHU_APP_ID` and `FEISHU_APP_SECRET`. Store them in

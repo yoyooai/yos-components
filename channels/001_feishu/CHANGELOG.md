@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8 - 2026-08-14
+
+### Added
+
+- Expose a local-only health hook that reports the masked Feishu App ID,
+  hostname and connection mode so `yos doctor` can distinguish instances
+  without exposing credentials or changing message delivery behavior.
+
 ## 0.1.7 - 2026-08-13
 
 ### Fixed

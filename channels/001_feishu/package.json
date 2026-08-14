@@ -1,6 +1,6 @@
 {
   "name": "yos-feishu",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Independently installable Feishu channel for YOS",
   "type": "module",
   "main": "src/index.js",

@@ -10,7 +10,7 @@ import { isCompatibleCoreVersion } from '../hooks/post-install-shared.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 test('YOS Core compatibility accepts the supported alpha line and rejects other lines', () => {
-  for (const version of ['0.1.0-alpha.1', '0.1.0-alpha.2', '0.1.0', '0.1.7']) {
+  for (const version of ['0.1.0-alpha.1', '0.1.0-alpha.2', '0.1.0', '0.1.8']) {
     assert.equal(isCompatibleCoreVersion(version), true, version);
   }
   for (const version of ['0.1.0-alpha.0', '0.0.9', '0.2.0', '1.0.0', 'garbage']) {
